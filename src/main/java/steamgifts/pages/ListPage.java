@@ -16,10 +16,6 @@ public class ListPage extends BaseForm {
 
     private SelenideElement seNextPage = $x("//a[./span[text()='Next']]");
 
-    public void openNotFadedGame() {
-        seNotFadedLink.get(0).click();
-    }
-
     public void openNotFadedGameByNumber(int i) {
         seNotFadedLink.get(i).click();
     }

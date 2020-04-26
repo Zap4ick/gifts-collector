@@ -35,6 +35,7 @@ public class App {
         pages.forEach(App::drillPage);
 
         System.in.read();
+        Selenide.closeWebDriver();
     }
 
     private static void drillPage(String page) {
