@@ -7,3 +7,6 @@ before_install:
 language: java
 #services: xvfb
 script: mvn exec:java
+email:
+  recipients:
+    on_failure: ${email}
