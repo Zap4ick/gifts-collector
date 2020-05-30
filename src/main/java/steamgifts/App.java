@@ -28,8 +28,7 @@ public class App {
     private static void readProperties() {
         try {
             PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
-            log.info("DEBUG:" +System.getProperties().toString());
-            Optional.ofNullable(System.getProperty("cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
+            Optional.ofNullable(System.getenv("cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
         } catch (IOException e) {
             log.warn("Properties not loaded:", e);
         }
@@ -42,7 +41,6 @@ public class App {
     }};
 
     public static void main(String[] args) throws IOException {
-        log.info("DEBUG: " + PROPERTIES.getProperty("cookie"));
         Configuration.browser = "chrome";
         Configuration.headless = true;
         Configuration.browserSize = "1366x768";
