@@ -4,9 +4,11 @@ addons:
   chrome: stable
 before_install:
   - google-chrome-stable --headless --disable-gpu
+git:
+  quiet: true
 language: java
 #services: xvfb
 script: mvn exec:java
 email:
   recipients:
-    on_failure: zap4ick@gmail.com
+    zap4ick@gmail

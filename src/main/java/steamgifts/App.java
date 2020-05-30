@@ -28,6 +28,7 @@ public class App {
     private static void readProperties() {
         try {
             PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
+            log.info("DEBUG:" +System.getProperties().toString());
             Optional.ofNullable(System.getProperty("cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
         } catch (IOException e) {
             log.warn("Properties not loaded:", e);
