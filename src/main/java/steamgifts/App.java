@@ -11,6 +11,7 @@ import steamgifts.pages.ListPage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.IntStream;
 
@@ -21,10 +22,15 @@ public class App {
     private static final Properties PROPERTIES = new Properties();
 
     static {
+        readProperties();
+    }
+
+    private static void readProperties() {
         try {
             PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
+            Optional.ofNullable(System.getProperty("cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
         } catch (IOException e) {
-            e.printStackTrace();
+            log.warn("Properties not loaded:", e);
         }
     }
 
