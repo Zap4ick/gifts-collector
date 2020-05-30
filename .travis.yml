@@ -1,9 +1,9 @@
 dist: xenial
 os: linux
-addons:
-  chrome: stable
-before_install:
-  - google-chrome-stable --headless --disable-gpu
+#addons:
+#  chrome: stable
+#before_install:
+#  - google-chrome-stable --headless --disable-gpu
 git:
   quiet: true
 language: java
