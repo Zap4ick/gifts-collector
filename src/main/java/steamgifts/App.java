@@ -52,7 +52,7 @@ public class App {
 
         pages.forEach(App::drillPage);
 
-        if (!PROPERTIES.getProperty("ci").isEmpty()) {
+        if (PROPERTIES.getProperty("ci").isEmpty()) {
             System.in.read();
         }
         Selenide.closeWebDriver();
