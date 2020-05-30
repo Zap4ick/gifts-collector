@@ -10,9 +10,6 @@ language: java
 #services: xvfb
 script:
   - mvn exec:java
-  - \n
-  - echo off
-  - echo When All Is Said And Done
 email:
   recipients:
     zap4ick@gmail
