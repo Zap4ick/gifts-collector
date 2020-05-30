@@ -8,7 +8,10 @@ git:
   quiet: true
 language: java
 #services: xvfb
-script: mvn exec:java
+script:
+  mvn exec:java
+  echo off
+  echo When All Is Said And Done
 email:
   recipients:
     zap4ick@gmail
