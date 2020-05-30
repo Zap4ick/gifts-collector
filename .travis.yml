@@ -9,4 +9,4 @@ language: java
 script: mvn exec:java
 email:
   recipients:
-    on_failure: ${email}
+    on_failure: zap4ick@gmail.com

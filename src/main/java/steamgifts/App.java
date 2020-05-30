@@ -41,9 +41,10 @@ public class App {
     }};
 
     public static void main(String[] args) throws IOException {
+        log.info("DEBUG: " + PROPERTIES.getProperty("cookie"));
         Configuration.browser = "chrome";
         Configuration.headless = true;
-        Configuration.browserSize="1366x768";
+        Configuration.browserSize = "1366x768";
 
         Selenide.open(PROPERTIES.getProperty("site"));
         WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
