@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/Zap4ick/gifts-collector.svg?branch=master)](https://travis-ci.org/Zap4ick/gifts-collector)
 # Gifts collector
 
 This is a simple gifts grabber from steam gifts site.
