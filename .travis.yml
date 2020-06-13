@@ -10,7 +10,7 @@ git:
 language: java
 #services: xvfb
 script:
-  - mvn exec:java
+  - mvn exec:java -Dexec.cleanupDaemonThreads=false
 email:
   recipients:
     zap4ick@gmail
