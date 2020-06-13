@@ -5,6 +5,7 @@ import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.WebDriverRunner;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
+import steamgifts.pages.BaseForm;
 import steamgifts.pages.GamePage;
 import steamgifts.pages.ListPage;
 
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 @Slf4j
@@ -52,16 +54,34 @@ public class App {
 
         pages.forEach(App::drillPage);
 
-        if (PROPERTIES.getProperty("ci").isEmpty()) {
-            System.in.read();
-        }
+        Optional.ofNullable(PROPERTIES.getProperty("ci")).ifPresentOrElse(null, ThrowingRunnable.unchecked(System.in::read));
+
         Selenide.closeWebDriver();
     }
 
+    @FunctionalInterface
+    public interface ThrowingRunnable {
+        void run() throws IOException;
+
+        static Runnable unchecked(ThrowingRunnable f) {
+            return () -> {
+                try {
+                    f.run();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            };
+        }
+    }
 
     private static void drillPage(String page) {
         List<Integer> ignoredNums = new ArrayList<>();
         Selenide.open(page);
+
+        if (!new BaseForm().isLoggedIn()) {
+            throw new RuntimeException("We are not logged in! Check cookie in props!");
+        }
+
         ListPage listPage = new ListPage();
         do {
             int points = listPage.getPoints();
