@@ -43,7 +43,7 @@ public class App {
         add(PROPERTIES.getProperty("site"));
     }};
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         Configuration.browser = "chrome";
         Configuration.headless = true;
         //Configuration.browserSize = "1366x768";
@@ -54,7 +54,8 @@ public class App {
 
         pages.forEach(App::drillPage);
 
-        Optional.ofNullable(PROPERTIES.getProperty("ci")).ifPresentOrElse(null, ThrowingRunnable.unchecked(System.in::read));
+        Optional.ofNullable(PROPERTIES.getProperty("ci")).ifPresentOrElse(prop -> System.out.println("Goodbye"),
+                ThrowingRunnable.unchecked(System.in::read));
 
         Selenide.closeWebDriver();
     }
