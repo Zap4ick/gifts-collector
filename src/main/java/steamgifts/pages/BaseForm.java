@@ -30,6 +30,6 @@ public class BaseForm {
     }
 
     public boolean isBannerPresent() {
-        return Objects.requireNonNull(seBanner.getAttribute("style")).contains("bottom: 0px;");
+        return seBanner.isDisplayed() && Objects.requireNonNull(seBanner.getAttribute("style")).contains("bottom: 0px;");
     }
 }
