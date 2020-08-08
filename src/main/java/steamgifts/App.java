@@ -37,15 +37,15 @@ public class App {
         }
     }
 
-    private static final List<String> pages = new ArrayList<String>() {{
-        add(PROPERTIES.getProperty("site") + "/giveaways/search?type=wishlist");
+    private static final List<String> pages = new ArrayList<>() {{
+        add(PROPERTIES.getProperty("site") + "giveaways/search?type=wishlist");
         add(PROPERTIES.getProperty("site") + "giveaways/search?type=recommended");
         add(PROPERTIES.getProperty("site"));
     }};
 
     public static void main(String[] args) {
         Configuration.browser = "chrome";
-        Configuration.headless = true;
+        //Configuration.headless = true;
         //Configuration.browserSize = "1366x768";
 
         Selenide.open(PROPERTIES.getProperty("site"));
@@ -84,6 +84,7 @@ public class App {
         }
 
         ListPage listPage = new ListPage();
+        listPage.closeBannerIfPresent();
         do {
             int points = listPage.getPoints();
             if (points == 0) {
