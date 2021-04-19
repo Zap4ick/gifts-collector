@@ -40,6 +40,7 @@ public class App {
     private static final List<String> pages = new ArrayList<>() {{
         add(PROPERTIES.getProperty("site") + "giveaways/search?type=wishlist");
         add(PROPERTIES.getProperty("site") + "giveaways/search?type=recommended");
+        add(PROPERTIES.getProperty("site") + "giveaways/search?dlc=true");
         add(PROPERTIES.getProperty("site"));
     }};
 
