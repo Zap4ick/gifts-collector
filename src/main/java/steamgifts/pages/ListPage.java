@@ -2,7 +2,7 @@ package steamgifts.pages;
 
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
 
@@ -21,7 +21,7 @@ public class ListPage extends BaseForm {
     }
 
     public boolean hasNotFadedGames() {
-        return seNotFadedLink.size() > 0;
+        return !seNotFadedLink.isEmpty();
     }
 
     public Integer getLinkNumberWithPointsWeCanHandle(int points, List<Integer> ignored) {
