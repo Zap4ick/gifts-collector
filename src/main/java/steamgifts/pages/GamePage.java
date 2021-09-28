@@ -9,10 +9,10 @@ import static com.codeborne.selenide.Selenide.$;
 @Slf4j
 public class GamePage extends BaseForm {
 
-    private SelenideElement seWon = $(".sidebar__error");
-    private SelenideElement seEnter = $(".sidebar__entry-insert");
-    private SelenideElement seRemoveEntry = $(".sidebar__entry-delete");
-    private SelenideElement seGameName = $(".featured__heading__medium");
+    private final SelenideElement seWon = $(".sidebar__error");
+    private final SelenideElement seEnter = $(".sidebar__entry-insert");
+    private final SelenideElement seRemoveEntry = $(".sidebar__entry-delete");
+    private final SelenideElement seGameName = $(".featured__heading__medium");
 
     public GamePage enterGiveway() {
         log.info("Entering giveway for " + seGameName.getText());

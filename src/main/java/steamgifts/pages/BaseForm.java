@@ -9,11 +9,11 @@ import static com.codeborne.selenide.Selenide.$x;
 
 public class BaseForm {
 
-    private SelenideElement sePoints = $(".nav__points");
-    private SelenideElement seLogin = $(".nav__sits");
-    private SelenideElement seBanner = $x("//div[contains(@class,'banner_banner')]");
+    private final SelenideElement sePoints = $(".nav__points");
+    private final SelenideElement seLogin = $(".nav__sits");
+    private final SelenideElement seBanner = $x("//div[contains(@class,'banner_banner')]");
 
-    private SelenideElement btnCloseBanner = $x("//button[contains(@class,'banner_save')]");
+    private final SelenideElement btnCloseBanner = $x("//button[contains(@class,'banner_save')]");
 
     public int getPoints() {
         return Integer.parseInt(sePoints.getText());
