@@ -4,6 +4,9 @@ import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.SelenideElement;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
 import static com.codeborne.selenide.Selenide.$;
 
 @Slf4j
@@ -17,7 +20,7 @@ public class GamePage extends BaseForm {
     public GamePage enterGiveway() {
         log.info("Entering giveway for " + seGameName.getText());
         seEnter.click();
-        seRemoveEntry.waitUntil(Condition.appear, 20000); //todo: take from params
+        seRemoveEntry.should(Condition.appear, Duration.of(20, ChronoUnit.SECONDS)); //todo: take from params
         return this;
     }
 
