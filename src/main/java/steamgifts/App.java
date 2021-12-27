@@ -4,7 +4,6 @@ import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.WebDriverRunner;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.exec.util.MapUtils;
 import org.openqa.selenium.Cookie;
 import steamgifts.pages.BaseForm;
 import steamgifts.pages.GamePage;
@@ -15,8 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 @Slf4j
@@ -30,8 +28,6 @@ public class App {
     }
 
     private static void readProperties() {
-        System.out.println(String.join(" ", System.getenv().keySet()));
-        System.out.println(String.join(" ", System.getenv().values()));
         try {
             PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
             Optional.ofNullable(System.getenv("cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
@@ -64,7 +60,7 @@ public class App {
 
         pages.forEach(App::drillPage);
 
-        Optional.ofNullable(PROPERTIES.getProperty("ci")).ifPresentOrElse(prop -> System.out.println("Goodbye"),
+        Optional.ofNullable(PROPERTIES.getProperty("ci")).ifPresentOrElse(prop -> Logger.getGlobal().info("Goodbye"),
                 ThrowingRunnable.unchecked(System.in::read));
 
         Selenide.closeWebDriver();
