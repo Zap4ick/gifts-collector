@@ -27,5 +27,5 @@ jobs:
         cache: maven
     - name: Build with Maven
       env:
-        cookie: ${{secrets.COOKIE}}
+        cookie: ${{ secrets.COOKIE }}
       run: mvn clean install exec:java -Dexec.cleanupDaemonThreads=false
