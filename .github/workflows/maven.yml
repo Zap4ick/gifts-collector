@@ -26,4 +26,4 @@ jobs:
         distribution: 'adopt'
         cache: maven
     - name: Build with Maven
-      run: mvn exec:java -Dexec.cleanupDaemonThreads=false
+      run: mvn clean install exec:java -Dexec.cleanupDaemonThreads=false
