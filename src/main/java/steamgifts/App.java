@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Slf4j
@@ -29,6 +30,8 @@ public class App {
     }
 
     private static void readProperties() {
+        System.out.println(String.join(" ", System.getenv().keySet()));
+        System.out.println(String.join(" ", System.getenv().values()));
         try {
             PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
             Optional.ofNullable(System.getenv("cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
