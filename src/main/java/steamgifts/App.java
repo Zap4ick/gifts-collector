@@ -32,6 +32,12 @@ public class App {
             PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
             Optional.ofNullable(System.getenv("cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
             Optional.ofNullable(System.getenv("env.cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
+            Optional.ofNullable(System.getenv("env.COOKIE")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
+
+            if (PROPERTIES.getProperty("cookie").isEmpty()){
+                throw new RuntimeException("No cookie has been read from props!");
+            }
+
             Optional.ofNullable(System.getenv("TRAVIS")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
             Optional.ofNullable(System.getenv("CI")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
         } catch (IOException e) {
