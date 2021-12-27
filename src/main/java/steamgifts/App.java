@@ -31,7 +31,9 @@ public class App {
         try {
             PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
             Optional.ofNullable(System.getenv("cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
+            Optional.ofNullable(System.getenv("env.cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
             Optional.ofNullable(System.getenv("TRAVIS")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
+            Optional.ofNullable(System.getenv("CI")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
         } catch (IOException e) {
             log.warn("Properties not loaded:", e);
         }
