@@ -20,6 +20,7 @@ import java.util.stream.IntStream;
 @Slf4j
 public class App {
 
+    private static final String COOKIE_PROP_KEY = "cookie";
     private static final String COOKIE_FIELD_NAME = "PHPSESSID";
     private static final Properties PROPERTIES = new Properties();
 
@@ -30,8 +31,8 @@ public class App {
     private static void readProperties() {
         try {
             PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
-            Optional.ofNullable(System.getenv("cookie")).ifPresent(value -> PROPERTIES.setProperty("cookie", value));
-            if (PROPERTIES.getProperty("cookie").isEmpty()){
+            Optional.ofNullable(System.getenv(COOKIE_PROP_KEY)).ifPresent(value -> PROPERTIES.setProperty(COOKIE_PROP_KEY, value));
+            if (PROPERTIES.getProperty(COOKIE_PROP_KEY).isEmpty()){
                 throw new RuntimeException("No cookie has been read from props!");
             }
 
@@ -51,12 +52,12 @@ public class App {
 
     public static void main(String[] args) {
         Configuration.browser = "chrome";
-        Configuration.headless = true;
+        //Configuration.headless = true;
         //Configuration.browserSize = "1366x768";
 
         Selenide.open(PROPERTIES.getProperty("site"));
         WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
-        WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty("cookie")));
+        WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));
 
         pages.forEach(App::drillPage);
 
@@ -109,7 +110,11 @@ public class App {
             GamePage gamePage = new GamePage();
             if (!gamePage.isWon()) {
                 gamePage.enterGiveway();
-            } else {
+            }
+            else if (gamePage.isMine()){
+                log.info("Is mine: {}", gamePage.getName());
+            }
+            else {
                 log.info("Already won: {}", gamePage.getName());
                 ignoredNums.add(numWeClick);
             }
@@ -119,7 +124,6 @@ public class App {
             numWeClick = listPage.getLinkNumberWithPointsWeCanHandle(points, ignoredNums);
         }
     }
-
     private static void optOutPinnedGames(ListPage listPage, List<Integer> ignoredNums) {
         int pinnedGamesNum = listPage.getPinnedGamesNum();
         IntStream.range(0, pinnedGamesNum).forEach(ignoredNums::add);

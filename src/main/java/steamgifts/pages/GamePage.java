@@ -18,7 +18,7 @@ public class GamePage extends BaseForm {
     private final SelenideElement seGameName = $(".featured__heading__medium");
 
     public GamePage enterGiveway() {
-        log.info("Entering giveway for " + seGameName.getText());
+        log.info("Entering giveway for {}", seGameName.getText());
         seEnter.click();
         seRemoveEntry.should(Condition.appear, Duration.of(20, ChronoUnit.SECONDS)); //todo: take from params
         return this;
@@ -26,6 +26,10 @@ public class GamePage extends BaseForm {
 
     public boolean isWon() {
         return seWon.isDisplayed();
+    }
+
+    public boolean isMine() {
+        return !seEnter.isDisplayed();
     }
 
     public String getName() {
