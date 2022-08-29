@@ -52,7 +52,7 @@ public class App {
 
     public static void main(String[] args) {
         Configuration.browser = "chrome";
-        //Configuration.headless = true;
+        Configuration.headless = true;
         //Configuration.browserSize = "1366x768";
 
         Selenide.open(PROPERTIES.getProperty("site"));
