@@ -108,14 +108,11 @@ public class App {
         while (numWeClick != null && points > 0) {
             listPage.openNotFadedGameByNumber(numWeClick);
             GamePage gamePage = new GamePage();
-            if (!gamePage.isWon()) {
+            if (!gamePage.isWon() && !gamePage.isMine()) {
                 gamePage.enterGiveway();
             }
-            else if (gamePage.isMine()){
-                log.info("Is mine: {}", gamePage.getName());
-            }
             else {
-                log.info("Already won: {}", gamePage.getName());
+                log.info("Can't participate: {}", gamePage.getName());
                 ignoredNums.add(numWeClick);
             }
             Selenide.back();
