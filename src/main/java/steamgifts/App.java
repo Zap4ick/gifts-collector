@@ -92,6 +92,7 @@ public class App {
 
         ListPage listPage = new ListPage();
         listPage.closeBannerIfPresent();
+        listPage.closeModalWinIfPresent();
         do {
             int points = listPage.getPoints();
             if (points == 0) {
