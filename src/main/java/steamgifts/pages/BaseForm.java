@@ -26,7 +26,7 @@ public class BaseForm {
     }
 
     public boolean isModalWinPresent() {
-        return !seModalWin.isDisplayed();
+        return seModalWin.isDisplayed();
     }
 
     public void closeBannerIfPresent() {
