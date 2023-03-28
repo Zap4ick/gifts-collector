@@ -11,6 +11,7 @@ import steamgifts.pages.ListPage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -43,12 +44,12 @@ public class App {
         }
     }
 
-    private static final List<String> pages = new ArrayList<>() {{
-        add(PROPERTIES.getProperty("site") + "giveaways/search?type=wishlist");
-        add(PROPERTIES.getProperty("site") + "giveaways/search?type=recommended");
-        add(PROPERTIES.getProperty("site") + "giveaways/search?dlc=true");
-        add(PROPERTIES.getProperty("site"));
-    }};
+    private static final List<String> pages = Arrays.asList(
+            PROPERTIES.getProperty("site") + "giveaways/search?type=wishlist",
+            PROPERTIES.getProperty("site") + "giveaways/search?type=recommended",
+            PROPERTIES.getProperty("site") + "giveaways/search?dlc=true",
+            PROPERTIES.getProperty("site")
+    );
 
     public static void main(String[] args) {
         Configuration.browser = "chrome";
@@ -109,12 +110,11 @@ public class App {
         while (numWeClick != null && points > 0) {
             listPage.openNotFadedGameByNumber(numWeClick);
             GamePage gamePage = new GamePage();
-            if (!gamePage.isWon() && !gamePage.isMine()) {
-                gamePage.enterGiveway();
-            }
-            else {
+            if (gamePage.isWon() || gamePage.isMine()) {
                 log.info("Can't participate: {}", gamePage.getName());
                 ignoredNums.add(numWeClick);
+            } else {
+                gamePage.enterGiveaway();
             }
             Selenide.back();
             Utils.pause(5);
@@ -122,6 +122,7 @@ public class App {
             numWeClick = listPage.getLinkNumberWithPointsWeCanHandle(points, ignoredNums);
         }
     }
+
     private static void optOutPinnedGames(ListPage listPage, List<Integer> ignoredNums) {
         int pinnedGamesNum = listPage.getPinnedGamesNum();
         IntStream.range(0, pinnedGamesNum).forEach(ignoredNums::add);

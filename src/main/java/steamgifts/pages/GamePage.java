@@ -17,8 +17,8 @@ public class GamePage extends BaseForm {
     private final SelenideElement seRemoveEntry = $(".sidebar__entry-delete");
     private final SelenideElement seGameName = $(".featured__heading__medium");
 
-    public GamePage enterGiveway() {
-        log.info("Entering giveway for {}", seGameName.getText());
+    public GamePage enterGiveaway() {
+        log.info("Entering giveaway for {}", seGameName.getText());
         seEnter.click();
         seRemoveEntry.should(Condition.appear, Duration.of(20, ChronoUnit.SECONDS)); //todo: take from params
         return this;
