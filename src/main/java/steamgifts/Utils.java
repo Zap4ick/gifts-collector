@@ -12,7 +12,7 @@ public class Utils {
 
     public static void pause(int secs) {
         try {
-            TimeUnit.SECONDS.sleep(secs * 1000L);
+            TimeUnit.SECONDS.sleep(secs);
         } catch (InterruptedException e) {
             log.warn("Exception in thread sleeping: ", e);
         }
