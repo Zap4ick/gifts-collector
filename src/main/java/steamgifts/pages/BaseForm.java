@@ -1,5 +1,6 @@
 package steamgifts.pages;
 
+import com.codeborne.selenide.ClickOptions;
 import com.codeborne.selenide.SelenideElement;
 
 import java.util.Objects;
@@ -37,7 +38,7 @@ public class BaseForm {
 
     public void closeModalWinIfPresent() {
         if (isModalWinPresent()) {
-            btnCloseModalWin.click();
+            btnCloseModalWin.click(ClickOptions.usingJavaScript());
         }
     }
 
