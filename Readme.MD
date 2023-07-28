@@ -1,4 +1,4 @@
-[![Java CI with Maven](https://github.com/Zap4ick/gifts-collector/actions/workflows/maven.yml/badge.svg)](https://github.com/Zap4ick/gifts-collector/actions/workflows/maven.yml)
+[![build](https://github.com/Zap4ick/gifts-collector/actions/workflows/maven.yml/badge.svg)](https://github.com/Zap4ick/gifts-collector/actions/workflows/maven.yml)
 # Gifts collector
 
 This is a simple gifts grabber from steam gifts site.
