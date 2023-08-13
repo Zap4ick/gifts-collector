@@ -8,6 +8,7 @@ import org.openqa.selenium.Cookie;
 import steamgifts.pages.BaseForm;
 import steamgifts.pages.GamePage;
 import steamgifts.pages.ListPage;
+import steamgifts.pages.SuspensionPage;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class App {
         try {
             PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
             Optional.ofNullable(System.getenv(COOKIE_PROP_KEY)).ifPresent(value -> PROPERTIES.setProperty(COOKIE_PROP_KEY, value));
-            if (PROPERTIES.getProperty(COOKIE_PROP_KEY).isEmpty()){
+            if (PROPERTIES.getProperty(COOKIE_PROP_KEY).isEmpty()) {
                 throw new RuntimeException("No cookie has been read from props!");
             }
 
@@ -86,6 +87,10 @@ public class App {
     private static void drillPage(String page) {
         List<Integer> ignoredNums = new ArrayList<>();
         Selenide.open(page);
+
+        if (new SuspensionPage().isOpen()) {
+            throw new RuntimeException("Seems like we are suspened :( Aborting mission!");
+        }
 
         if (!new BaseForm().isLoggedIn()) {
             throw new RuntimeException("We are not logged in! Check cookie in props!");
