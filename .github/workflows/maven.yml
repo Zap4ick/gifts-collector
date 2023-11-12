@@ -25,7 +25,12 @@ jobs:
         java-version: '21'
         distribution: 'adopt'
         cache: maven
+        artifacts: $CI_PROJECT_DIR/build/reports/tests/
+      
     - name: Build with Maven
       env:
         cookie: ${{ secrets.COOKIE }}
       run: mvn clean install exec:java -Dexec.cleanupDaemonThreads=false
+  
+    
+  
