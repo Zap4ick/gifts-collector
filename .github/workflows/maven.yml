@@ -35,7 +35,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         #name: code-coverage-report
-        path: $CI_PROJECT_DIR/build/
+        path: ${{ github.workspace }}/gifts-collector/gifts-collector/build/
         retention-days: 1
   
     
