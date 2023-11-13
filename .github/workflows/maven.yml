@@ -35,8 +35,6 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         #name: code-coverage-report
-        path: ${{ github.workspace }}/build/**
+        path: ${{ github.workspace }}/build/*
         retention-days: 1
-  
-    
   
