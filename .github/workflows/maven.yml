@@ -25,7 +25,6 @@ jobs:
         java-version: '21'
         distribution: 'adopt'
         cache: maven
-        artifacts: $CI_PROJECT_DIR/build/reports/tests/
       
     - name: Build with Maven
       env:
@@ -36,7 +35,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         #name: code-coverage-report
-        path: gifts-collector/gifts-collector/build/
+        path: $CI_PROJECT_DIR/build/
         retention-days: 1
   
     
