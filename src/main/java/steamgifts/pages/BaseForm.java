@@ -16,7 +16,7 @@ public class BaseForm {
     private final SelenideElement seModalWin = $x("//div[contains(@class,'popup--gift-received')]");
 
     private final SelenideElement btnCloseBanner = $x("//button[contains(@class,'banner_save')]");
-    private final SelenideElement btnCloseModalWin = $x("//span[@class='b-close']");
+    private final SelenideElement btnCloseModalWin = $x("//div[contains(@class,'popup--gift-received')]//span[@class='b-close']");
 
     public int getPoints() {
         return Integer.parseInt(sePoints.getText());
