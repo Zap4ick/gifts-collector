@@ -5,17 +5,11 @@ import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.WebDriverRunner;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
-import steamgifts.pages.BaseForm;
-import steamgifts.pages.GamePage;
-import steamgifts.pages.ListPage;
-import steamgifts.pages.SuspensionPage;
+import org.openqa.selenium.chrome.ChromeOptions;
+import steamgifts.pages.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
@@ -57,9 +51,18 @@ public class App {
         Configuration.headless = true;
         //Configuration.browserSize = "1366x768";
 
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--disable-blink-features=AutomationControlled");
+        options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
+        options.setExperimentalOption("useAutomationExtension", false);
+        Configuration.browserCapabilities = options;
+
         Selenide.open(PROPERTIES.getProperty("site"));
         WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
         WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));
+
+
+
 
         pages.forEach(App::drillPage);
 
@@ -88,6 +91,10 @@ public class App {
         List<Integer> ignoredNums = new ArrayList<>();
         Selenide.open(page);
 
+        if (new CaptchaPage().isOpen()) {
+            new CaptchaPage().passCaptcha();
+        }
+
         if (new SuspensionPage().isOpen()) {
             throw new RuntimeException("Seems like we are suspened :( Aborting mission!");
         }
@@ -97,6 +104,7 @@ public class App {
         }
 
         ListPage listPage = new ListPage();
+        listPage.consentIfPresent();
         listPage.closeBannerIfPresent();
         listPage.closeModalWinIfPresent();
         do {
@@ -122,6 +130,7 @@ public class App {
                 gamePage.enterGiveaway();
             }
             Selenide.back();
+            Selenide.refresh(); // hotfix for cache_err
             Utils.pause(5);
             points = listPage.getPoints();
             numWeClick = listPage.getLinkNumberWithPointsWeCanHandle(points, ignoredNums);

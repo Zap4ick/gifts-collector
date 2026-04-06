@@ -17,6 +17,7 @@ public class BaseForm {
 
     private final SelenideElement btnCloseBanner = $x("//button[contains(@class,'banner_save')]");
     private final SelenideElement btnCloseModalWin = $x("//div[contains(@class,'popup--gift-received')]//span[@class='b-close']");
+    private final SelenideElement btnConsent = $x("//button[@aria-label='Consent']");
 
     public int getPoints() {
         return Integer.parseInt(sePoints.getText());
@@ -42,7 +43,17 @@ public class BaseForm {
         }
     }
 
+    public void consentIfPresent() {
+        if (isConsentPresent()) {
+            btnConsent.click(ClickOptions.usingJavaScript());
+        }
+    }
+
     public boolean isBannerPresent() {
         return seBanner.isDisplayed() && Objects.requireNonNull(seBanner.getAttribute("style")).contains("bottom: 0px;");
+    }
+
+    public boolean isConsentPresent() {
+        return btnConsent.isDisplayed();
     }
 }
