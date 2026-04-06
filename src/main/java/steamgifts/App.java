@@ -5,6 +5,7 @@ import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.WebDriverRunner;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import steamgifts.pages.*;
 
@@ -60,6 +61,22 @@ public class App {
         Configuration.browserCapabilities = options;
 
         Selenide.open(PROPERTIES.getProperty("site"));
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("source", """
+    Object.defineProperty(navigator, 'languages', { get: () => ['ru-RU', 'ru', 'en-US', 'en'] });
+    Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+
+    const getParameter = WebGLRenderingContext.prototype.getParameter;
+    WebGLRenderingContext.prototype.getParameter = function(parameter) {
+        if (parameter === 37445) return 'Intel Inc.';
+        if (parameter === 37446) return 'Intel(R) Iris(R) Xe Graphics Direct3D11 vs_5_0 ps_5_0';
+        return getParameter.apply(this, arguments);
+    };
+""");
+
+        ((ChromeDriver) WebDriverRunner.getWebDriver()).executeCdpCommand("Page.addScriptToEvaluateOnNewDocument", params);
+
         WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
         WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));
 
