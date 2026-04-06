@@ -61,9 +61,6 @@ public class App {
         WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
         WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));
 
-
-
-
         pages.forEach(App::drillPage);
 
         Optional.ofNullable(PROPERTIES.getProperty("ci")).ifPresentOrElse(prop -> Logger.getGlobal().info("Goodbye"),
@@ -91,7 +88,7 @@ public class App {
         List<Integer> ignoredNums = new ArrayList<>();
         Selenide.open(page);
 
-        if (new CaptchaPage().isOpen()) {
+        if (new CaptchaPage().isOpen()) { // todo: set a flag
             new CaptchaPage().passCaptcha();
         }
 

@@ -10,7 +10,7 @@ import static com.codeborne.selenide.Selenide.$;
 
 public class CaptchaPage extends BaseForm {
 
-    private static final Duration CAPTCHA_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration CAPTCHA_TIMEOUT = Duration.ofSeconds(20);
 
     private final SelenideElement seCaptcha = $("#mIyT8");
 
@@ -25,6 +25,11 @@ public class CaptchaPage extends BaseForm {
 
     public void passCaptcha() {
         seCaptcha.click(ClickOptions.withOffset(-300, 0).force());
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         seCaptcha.shouldNot(exist, CAPTCHA_TIMEOUT);
     }
 }
