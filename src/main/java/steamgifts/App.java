@@ -20,6 +20,8 @@ public class App {
     private static final String COOKIE_FIELD_NAME = "PHPSESSID";
     private static final Properties PROPERTIES = new Properties();
 
+    private static final String CAPTCHA_PASSED_KEY = "CAPTCHA_PASSED";
+
     static {
         readProperties();
     }
@@ -91,8 +93,9 @@ public class App {
         List<Integer> ignoredNums = new ArrayList<>();
         Selenide.open(page);
 
-        if (new CaptchaPage().isOpen()) { // todo: set a flag
+        if (System.getProperty(CAPTCHA_PASSED_KEY) == null && new CaptchaPage().isOpen()) {
             new CaptchaPage().passCaptcha();
+            System.setProperty(CAPTCHA_PASSED_KEY, "true");
         }
 
         if (new SuspensionPage().isOpen()) {
