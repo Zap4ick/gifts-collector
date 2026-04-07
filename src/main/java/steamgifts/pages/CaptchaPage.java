@@ -2,6 +2,7 @@ package steamgifts.pages;
 
 import com.codeborne.selenide.ClickOptions;
 import com.codeborne.selenide.SelenideElement;
+import steamgifts.Utils;
 
 import java.time.Duration;
 
@@ -15,21 +16,13 @@ public class CaptchaPage extends BaseForm {
     private final SelenideElement seCaptcha = $("#mIyT8");
 
     public boolean isOpen() {
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        Utils.pause(5);
         return seCaptcha.is(exist);
     }
 
     public void passCaptcha() {
         seCaptcha.click(ClickOptions.withOffset(-300, 0).force());
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        Utils.pause(10);
         seCaptcha.shouldNot(exist, CAPTCHA_TIMEOUT);
     }
 }

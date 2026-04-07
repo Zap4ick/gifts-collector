@@ -1,5 +1,6 @@
 package steamgifts.pages;
 
+import com.codeborne.selenide.ClickOptions;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
 import org.apache.commons.lang3.StringUtils;
@@ -17,7 +18,7 @@ public class ListPage extends BaseForm {
     private final SelenideElement seNextPage = $x("//a[./span[text()='Next']]");
 
     public void openNotFadedGameByNumber(int i) {
-        seNotFadedLink.get(i).click();
+        seNotFadedLink.get(i).click(ClickOptions.usingJavaScript());
     }
 
     public boolean hasNotFadedGames() {
