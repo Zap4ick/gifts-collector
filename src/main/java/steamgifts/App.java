@@ -50,12 +50,12 @@ public class App {
 
     public static void main(String[] args) {
         Configuration.browser = "chrome";
-        //Configuration.headless = false;
+//        Configuration.headless = false;
         Configuration.browserSize = "1366x768";
 
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--disable-blink-features=AutomationControlled");
-        //options.addArguments("--headless=new");
+        options.addArguments("--headless=new");
         options.addArguments("user-agent=Chrome/147.0.7727.56"); //todo: take from selenide
         options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
         options.setExperimentalOption("useAutomationExtension", false);
