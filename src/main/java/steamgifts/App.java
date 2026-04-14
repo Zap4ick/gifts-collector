@@ -55,8 +55,8 @@ public class App {
 
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--disable-blink-features=AutomationControlled");
-        options.addArguments("--headless=new");
-        options.addArguments("user-agent=Chrome/146.0.7680.178");
+        //options.addArguments("--headless=new");
+        options.addArguments("user-agent=Chrome/147.0.7727.56"); //todo: take from selenide
         options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
         options.setExperimentalOption("useAutomationExtension", false);
         Configuration.browserCapabilities = options;
