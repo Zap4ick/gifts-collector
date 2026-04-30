@@ -56,9 +56,18 @@ public class App {
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--disable-blink-features=AutomationControlled");
         options.addArguments("--headless=new");
-        options.addArguments("user-agent=Chrome/147.0.7727.56"); //todo: take from selenide
+        options.addArguments("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.7727.56 Safari/537.36");
+        options.addArguments("--lang=en-US,en;q=0.9");
+        options.addArguments("--disable-infobars");
+        options.addArguments("--no-first-run");
+        options.addArguments("--no-default-browser-check");
         options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
         options.setExperimentalOption("useAutomationExtension", false);
+        Map<String, Object> prefs = new HashMap<>();
+        prefs.put("credentials_enable_service", false);
+        prefs.put("profile.password_manager_enabled", false);
+        prefs.put("intl.accept_languages", "en-US,en");
+        options.setExperimentalOption("prefs", prefs);
         Configuration.browserCapabilities = options;
 
         Selenide.open(PROPERTIES.getProperty("site"));
