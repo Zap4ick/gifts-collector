@@ -29,6 +29,12 @@ jobs:
         distribution: 'temurin'
         cache: maven
       
+    - name: Start virtual display (Xvfb)
+      run: |
+        sudo apt-get install -y xvfb
+        Xvfb :99 -screen 0 1366x768x24 &
+        echo "DISPLAY=:99" >> $GITHUB_ENV
+
     - name: Build with Maven
       env:
         cookie: ${{ secrets.COOKIE }}
