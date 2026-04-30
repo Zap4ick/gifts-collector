@@ -21,12 +21,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up JDK 21
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: '21'
-        distribution: 'adopt'
+        distribution: 'temurin'
         cache: maven
       
     - name: Build with Maven
@@ -34,11 +34,10 @@ jobs:
         cookie: ${{ secrets.COOKIE }}
       run: mvn clean install exec:java -Dexec.cleanupDaemonThreads=false
 
-    #- name: Archive artifacts
-    #  if: failure()
-    #  uses: actions/upload-artifact@v3
-    #  with:
-    #    #name: code-coverage-report
-    #    path: ${{ github.workspace }}/build/
-    #    retention-days: 1
-  
+    - name: Upload screenshots on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: failure-screenshots
+        path: ${{ github.workspace }}/build/reports/tests/
+        retention-days: 7
