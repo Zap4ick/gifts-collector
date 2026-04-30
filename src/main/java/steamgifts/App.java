@@ -6,6 +6,7 @@ import com.codeborne.selenide.WebDriverRunner;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.chromium.ChromiumDriver;
 import steamgifts.pages.*;
 
 import java.io.IOException;
@@ -21,6 +22,7 @@ public class App {
     private static final Properties PROPERTIES = new Properties();
 
     private static final String CAPTCHA_PASSED_KEY = "CAPTCHA_PASSED";
+    private static final Random RANDOM = new Random();
 
     static {
         readProperties();
@@ -71,6 +73,17 @@ public class App {
         Configuration.browserCapabilities = options;
 
         Selenide.open(PROPERTIES.getProperty("site"));
+
+        // Inject stealth JS via CDP so every new document has navigator.webdriver hidden
+        // and looks like a real browser to JS-based bot detection
+        ChromiumDriver chromiumDriver = (ChromiumDriver) WebDriverRunner.getWebDriver();
+        chromiumDriver.executeCdpCommand("Page.addScriptToEvaluateOnNewDocument", Map.of("source", """
+                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+                window.chrome = { runtime: {} };
+                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+                Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+                Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
+                """));
 
         WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
         WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));
@@ -143,7 +156,7 @@ public class App {
             }
             Selenide.back();
             Selenide.refresh(); // hotfix for cache_err
-            Utils.pause(5);
+            Utils.pause(4 + RANDOM.nextInt(6)); // random 4–9s to avoid uniform timing fingerprint
             points = listPage.getPoints();
             numWeClick = listPage.getLinkNumberWithPointsWeCanHandle(points, ignoredNums);
         }
