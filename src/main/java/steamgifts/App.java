@@ -5,7 +5,6 @@ import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.WebDriverRunner;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.chromium.ChromiumDriver;
 import steamgifts.pages.*;
 
@@ -52,38 +51,12 @@ public class App {
 
     public static void main(String[] args) {
         Configuration.browser = "chrome";
-//        Configuration.headless = false;
         Configuration.browserSize = "1366x768";
-
-        ChromeOptions options = new ChromeOptions();
-        options.addArguments("--disable-blink-features=AutomationControlled");
-        options.addArguments("--headless=new");
-        options.addArguments("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.7727.56 Safari/537.36");
-        options.addArguments("--lang=en-US,en;q=0.9");
-        options.addArguments("--disable-infobars");
-        options.addArguments("--no-first-run");
-        options.addArguments("--no-default-browser-check");
-        options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
-        options.setExperimentalOption("useAutomationExtension", false);
-        Map<String, Object> prefs = new HashMap<>();
-        prefs.put("credentials_enable_service", false);
-        prefs.put("profile.password_manager_enabled", false);
-        prefs.put("intl.accept_languages", "en-US,en");
-        options.setExperimentalOption("prefs", prefs);
-        Configuration.browserCapabilities = options;
+        Configuration.browserCapabilities = Utils.buildStealthOptions();
 
         Selenide.open(PROPERTIES.getProperty("site"));
 
-        // Inject stealth JS via CDP so every new document has navigator.webdriver hidden
-        // and looks like a real browser to JS-based bot detection
-        ChromiumDriver chromiumDriver = (ChromiumDriver) WebDriverRunner.getWebDriver();
-        chromiumDriver.executeCdpCommand("Page.addScriptToEvaluateOnNewDocument", Map.of("source", """
-                Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-                window.chrome = { runtime: {} };
-                Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
-                Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-                Object.defineProperty(navigator, 'platform', { get: () => 'Win32' });
-                """));
+        Utils.injectStealthScript((ChromiumDriver) WebDriverRunner.getWebDriver());
 
         WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
         WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));

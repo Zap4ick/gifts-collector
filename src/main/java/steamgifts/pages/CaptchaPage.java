@@ -1,7 +1,8 @@
 package steamgifts.pages;
 
-import com.codeborne.selenide.ClickOptions;
 import com.codeborne.selenide.SelenideElement;
+import com.codeborne.selenide.WebDriverRunner;
+import org.openqa.selenium.interactions.Actions;
 import steamgifts.Utils;
 
 import java.time.Duration;
@@ -21,7 +22,12 @@ public class CaptchaPage extends BaseForm {
     }
 
     public void passCaptcha() {
-        seCaptcha.click(ClickOptions.withOffset(-300, 0).force());
+        // Use native mouse hover + click to appear human to the captcha widget
+        new Actions(WebDriverRunner.getWebDriver())
+                .moveToElement(seCaptcha.getWrappedElement())
+                .pause(Duration.ofMillis(500 + (long) (Math.random() * 500)))
+                .click()
+                .perform();
         Utils.pause(10);
         seCaptcha.shouldNot(exist, CAPTCHA_TIMEOUT);
     }
