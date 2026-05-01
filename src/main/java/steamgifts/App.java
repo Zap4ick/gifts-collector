@@ -68,7 +68,12 @@ public class App {
                 .filter(v -> !v.isBlank())
                 .ifPresent(v -> {
                     WebDriverRunner.getWebDriver().manage().deleteCookieNamed(CF_CLEARANCE_FIELD_NAME);
-                    WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(CF_CLEARANCE_FIELD_NAME, v));
+                    Cookie cfCookie = new Cookie.Builder(CF_CLEARANCE_FIELD_NAME, v)
+                            .domain(".steamgifts.com")
+                            .path("/")
+                            .isSecure(true)
+                            .build();
+                    WebDriverRunner.getWebDriver().manage().addCookie(cfCookie);
                     log.info("cf_clearance cookie injected.");
                 });
 
