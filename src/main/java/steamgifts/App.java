@@ -35,7 +35,7 @@ public class App {
                 throw new RuntimeException("No cookie has been read from props!");
             }
 
-            Optional.ofNullable(System.getenv("TRAVIS")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
+            //Optional.ofNullable(System.getenv("TRAVIS")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
             Optional.ofNullable(System.getenv("CI")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
         } catch (IOException e) {
             log.warn("Properties not loaded:", e);
