@@ -18,6 +18,7 @@ public class App {
 
     private static final String COOKIE_PROP_KEY = "cookie";
     private static final String COOKIE_FIELD_NAME = "PHPSESSID";
+    private static final String CF_CLEARANCE_FIELD_NAME = "cf_clearance";
     private static final Properties PROPERTIES = new Properties();
 
     private static final String CAPTCHA_PASSED_KEY = "CAPTCHA_PASSED";
@@ -34,8 +35,9 @@ public class App {
             if (PROPERTIES.getProperty(COOKIE_PROP_KEY).isEmpty()) {
                 throw new RuntimeException("No cookie has been read from props!");
             }
+            // Allow overriding cf_clearance via environment variable (CI secret)
+            Optional.ofNullable(System.getenv(CF_CLEARANCE_FIELD_NAME)).ifPresent(value -> PROPERTIES.setProperty(CF_CLEARANCE_FIELD_NAME, value));
 
-            //Optional.ofNullable(System.getenv("TRAVIS")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
             Optional.ofNullable(System.getenv("CI")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
         } catch (IOException e) {
             log.warn("Properties not loaded:", e);
@@ -60,6 +62,15 @@ public class App {
 
         WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
         WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));
+
+        // Inject cf_clearance so Cloudflare treats this session as already verified
+        Optional.ofNullable(PROPERTIES.getProperty(CF_CLEARANCE_FIELD_NAME))
+                .filter(v -> !v.isBlank())
+                .ifPresent(v -> {
+                    WebDriverRunner.getWebDriver().manage().deleteCookieNamed(CF_CLEARANCE_FIELD_NAME);
+                    WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(CF_CLEARANCE_FIELD_NAME, v));
+                    log.info("cf_clearance cookie injected.");
+                });
 
         pages.forEach(App::drillPage);
 

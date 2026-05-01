@@ -38,6 +38,7 @@ jobs:
     - name: Build with Maven
       env:
         cookie: ${{ secrets.COOKIE }}
+        cf_clearance: ${{ secrets.CF_CLEARANCE }}
       run: mvn clean install exec:java -Dexec.cleanupDaemonThreads=false
 
     - name: Upload screenshots on failure
