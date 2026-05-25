@@ -35,7 +35,6 @@ public class App {
             if (PROPERTIES.getProperty(COOKIE_PROP_KEY).isEmpty()) {
                 throw new RuntimeException("No cookie has been read from props!");
             }
-            // Allow overriding cf_clearance via environment variable (CI secret)
             Optional.ofNullable(System.getenv(CF_CLEARANCE_FIELD_NAME)).ifPresent(value -> PROPERTIES.setProperty(CF_CLEARANCE_FIELD_NAME, value));
 
             Optional.ofNullable(System.getenv("CI")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
