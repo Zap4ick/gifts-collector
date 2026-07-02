@@ -9,6 +9,7 @@ import org.openqa.selenium.chromium.ChromiumDriver;
 import steamgifts.pages.*;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
@@ -19,6 +20,8 @@ public class App {
     private static final String COOKIE_PROP_KEY = "cookie";
     private static final String COOKIE_FIELD_NAME = "PHPSESSID";
     private static final String CF_CLEARANCE_FIELD_NAME = "cf_clearance";
+    private static final String CHROME_PROFILE_DIR_KEY = "chrome_profile_dir";
+    private static final String LOCAL_BROWSER_PORT_KEY = "local_browser_port";
     private static final Properties PROPERTIES = new Properties();
 
     private static final String CAPTCHA_PASSED_KEY = "CAPTCHA_PASSED";
@@ -38,6 +41,8 @@ public class App {
             Optional.ofNullable(System.getenv(CF_CLEARANCE_FIELD_NAME)).ifPresent(value -> PROPERTIES.setProperty(CF_CLEARANCE_FIELD_NAME, value));
 
             Optional.ofNullable(System.getenv("CI")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
+            Optional.ofNullable(System.getenv("CHROME_PROFILE_DIR")).ifPresent(value -> PROPERTIES.setProperty(CHROME_PROFILE_DIR_KEY, value));
+            Optional.ofNullable(System.getenv("LOCAL_BROWSER_PORT")).ifPresent(value -> PROPERTIES.setProperty(LOCAL_BROWSER_PORT_KEY, value));
         } catch (IOException e) {
             log.warn("Properties not loaded:", e);
         }
@@ -50,31 +55,102 @@ public class App {
             PROPERTIES.getProperty("site")
     );
 
+    private static boolean isLocalMode() {
+        String profileDir = PROPERTIES.getProperty(CHROME_PROFILE_DIR_KEY, "").trim();
+        String localPort = PROPERTIES.getProperty(LOCAL_BROWSER_PORT_KEY, "").trim();
+        return !profileDir.isEmpty() || !localPort.isEmpty();
+    }
+
+    private static boolean isPortOpen(String host, int port) {
+        try (Socket s = new Socket(host, port)) {
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static void waitForInput(String message) {
+        System.out.println(message);
+        System.out.print("Press Enter when ready... ");
+        try {
+            //noinspection ResultOfMethodCallIgnored
+            System.in.read();
+            // drain rest of line
+            while (System.in.available() > 0) System.in.read();
+        } catch (IOException e) {
+            log.warn("Error reading input", e);
+        }
+    }
+
     public static void main(String[] args) {
         Configuration.browser = "chrome";
         Configuration.browserSize = "1366x768";
-        Configuration.browserCapabilities = Utils.buildStealthOptions();
 
-        Selenide.open(PROPERTIES.getProperty("site"));
+        String profileDir = PROPERTIES.getProperty(CHROME_PROFILE_DIR_KEY, "").trim();
+        String localPort = PROPERTIES.getProperty(LOCAL_BROWSER_PORT_KEY, "").trim();
 
-        Utils.injectStealthScript((ChromiumDriver) WebDriverRunner.getWebDriver());
+        if (!profileDir.isEmpty()) {
+            // Option A: launch Chrome with the user's real profile — captcha likely skipped entirely
+            log.info("Local mode: launching Chrome with real profile at '{}'", profileDir);
+            Configuration.browserCapabilities = Utils.buildProfileOptions(profileDir);
+            Selenide.open(PROPERTIES.getProperty("site"));
+            Utils.injectStealthScript((ChromiumDriver) WebDriverRunner.getWebDriver());
+        } else if (!localPort.isEmpty()) {
+            // Option B: attach to an already-running Chrome instance
+            String debuggerAddress = "localhost:" + localPort;
+            int port = Integer.parseInt(localPort);
 
-        WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
-        WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));
+            // Wait until Chrome is listening on the debug port
+            while (!isPortOpen("localhost", port)) {
+                waitForInput("""
+                        
+                        Chrome is not running with remote debugging.
+                        Please start it with:
+                          /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=%d --user-data-dir=~/.chrome-steamgifts
+                        """.formatted(port));
+            }
 
-        // Inject cf_clearance so Cloudflare treats this session as already verified
-        Optional.ofNullable(PROPERTIES.getProperty(CF_CLEARANCE_FIELD_NAME))
-                .filter(v -> !v.isBlank())
-                .ifPresent(v -> {
-                    WebDriverRunner.getWebDriver().manage().deleteCookieNamed(CF_CLEARANCE_FIELD_NAME);
-                    Cookie cfCookie = new Cookie.Builder(CF_CLEARANCE_FIELD_NAME, v)
-                            .domain(".steamgifts.com")
-                            .path("/")
-                            .isSecure(true)
-                            .build();
-                    WebDriverRunner.getWebDriver().manage().addCookie(cfCookie);
-                    log.info("cf_clearance cookie injected.");
-                });
+            log.info("Local mode: attaching to running Chrome at {}", debuggerAddress);
+            Configuration.browserCapabilities = Utils.buildAttachOptions(debuggerAddress);
+            Selenide.open(PROPERTIES.getProperty("site"));
+
+            // Wait until user is logged in
+            while (!new BaseForm().isLoggedIn()) {
+                waitForInput("""
+                        
+                        Not logged in to steamgifts.com.
+                        Please log in to https://www.steamgifts.com in the Chrome window.
+                        """);
+                Selenide.refresh();
+            }
+            log.info("Logged in — starting giveaway collection.");
+        } else {
+            // Default (CI) mode: spawn a fresh Chrome with stealth options
+            Configuration.browserCapabilities = Utils.buildStealthOptions();
+            Selenide.open(PROPERTIES.getProperty("site"));
+            Utils.injectStealthScript((ChromiumDriver) WebDriverRunner.getWebDriver());
+        }
+
+        if (!isLocalMode()) {
+            WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
+            WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));
+
+            // Inject cf_clearance so Cloudflare treats this session as already verified
+            Optional.ofNullable(PROPERTIES.getProperty(CF_CLEARANCE_FIELD_NAME))
+                    .filter(v -> !v.isBlank())
+                    .ifPresent(v -> {
+                        WebDriverRunner.getWebDriver().manage().deleteCookieNamed(CF_CLEARANCE_FIELD_NAME);
+                        Cookie cfCookie = new Cookie.Builder(CF_CLEARANCE_FIELD_NAME, v)
+                                .domain(".steamgifts.com")
+                                .path("/")
+                                .isSecure(true)
+                                .build();
+                        WebDriverRunner.getWebDriver().manage().addCookie(cfCookie);
+                        log.info("cf_clearance cookie injected.");
+                    });
+        } else {
+            log.info("Local mode: skipping cookie injection — using browser's existing session.");
+        }
 
         pages.forEach(App::drillPage);
 
@@ -103,7 +179,7 @@ public class App {
         List<Integer> ignoredNums = new ArrayList<>();
         Selenide.open(page);
 
-        if (System.getProperty(CAPTCHA_PASSED_KEY) == null && new CaptchaPage().isOpen()) {
+        if (!isLocalMode() && System.getProperty(CAPTCHA_PASSED_KEY) == null && new CaptchaPage().isOpen()) {
             new CaptchaPage().passCaptcha();
             System.setProperty(CAPTCHA_PASSED_KEY, "true");
         }
