@@ -7,6 +7,23 @@ This is a simple gifts grabber from steam gifts site.
 
 Log in to steam gifts site with your steam account, go to dev tools (F12) in browser and look for PHPSESSID cookie. Put it in config.properties file or env variable.
 
+## Quick Start (one command)
+
+Make sure `config.properties` has `local_browser_port=9222`, then just run:
+
+```bash
+./run.sh
+```
+
+The script will:
+1. Launch Chrome with remote debugging on port 9222 (skipped if Chrome is already running).
+2. Wait until Chrome is ready.
+3. Run the app with `mvn exec:java`.
+
+> 💡 The first time Chrome opens, log in to steamgifts.com. Your session is persisted in `~/.chrome-steamgifts`, so subsequent runs start straight away.
+
+---
+
 ## Running the app
 
 ### CI / headless (GitHub Actions)

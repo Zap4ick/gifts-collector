@@ -27,7 +27,7 @@ public class GamePage extends BaseForm {
         return seWon.isDisplayed();
     }
 
-    public boolean isMine() {
+    public boolean isEntered() {
         return !seEnter.isDisplayed();
     }
 

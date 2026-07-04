@@ -11,6 +11,7 @@ import steamgifts.pages.*;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
@@ -74,9 +75,9 @@ public class App {
         System.out.print("Press Enter when ready... ");
         try {
             //noinspection ResultOfMethodCallIgnored
-            System.in.read();
             // drain rest of line
-            while (System.in.available() > 0) System.in.read();
+            do System.in.read();
+            while (System.in.available() > 0);
         } catch (IOException e) {
             log.warn("Error reading input", e);
         }
@@ -152,10 +153,13 @@ public class App {
             log.info("Local mode: skipping cookie injection — using browser's existing session.");
         }
 
-        pages.forEach(App::drillPage);
+        AtomicInteger pointsleft = new AtomicInteger(300);
+        pages.forEach((page) -> {
+            pointsleft.set(drillPage(page, pointsleft.get()));
+        });
 
         Optional.ofNullable(PROPERTIES.getProperty("ci")).ifPresentOrElse(prop -> Logger.getGlobal().info("Goodbye"),
-                ThrowingRunnable.unchecked(System.in::read));
+                ThrowingRunnable.unchecked(() -> waitForInput("Finishing. Press Enter.")));
 
         Selenide.closeWebDriver();
     }
@@ -175,13 +179,24 @@ public class App {
         }
     }
 
-    private static void drillPage(String page) {
+    private static int drillPage(String page, Integer pointsleft) {
+        if (pointsleft < 5) {
+            return pointsleft;
+        }
+
         List<Integer> ignoredNums = new ArrayList<>();
         Selenide.open(page);
 
-        if (!isLocalMode() && System.getProperty(CAPTCHA_PASSED_KEY) == null && new CaptchaPage().isOpen()) {
-            new CaptchaPage().passCaptcha();
-            System.setProperty(CAPTCHA_PASSED_KEY, "true");
+        if (System.getProperty(CAPTCHA_PASSED_KEY) == null) {
+            CaptchaPage captchaPage = new CaptchaPage();
+            if (captchaPage.isOpen()) {
+                if (isLocalMode()) {
+                    waitForInput("\nCaptcha detected! Please solve the captcha in the browser window.");
+                } else {
+                    captchaPage.passCaptcha();
+                }
+                System.setProperty(CAPTCHA_PASSED_KEY, "true");
+            }
         }
 
         if (new SuspensionPage().isOpen()) {
@@ -196,8 +211,9 @@ public class App {
         listPage.consentIfPresent();
         listPage.closeBannerIfPresent();
         listPage.closeModalWinIfPresent();
+        int points;
         do {
-            int points = listPage.getPoints();
+            points = listPage.getPoints();
             if (points == 0) {
                 break;
             }
@@ -205,6 +221,7 @@ public class App {
             clickThrough(ignoredNums, listPage, points);
         } while (listPage.clickNextIfPresent());
         log.info("Points: {}, Games left: {}", listPage.getPoints(), listPage.hasNotFadedGames());
+        return points;
     }
 
     private static void clickThrough(List<Integer> ignoredNums, ListPage listPage, int points) {
@@ -212,8 +229,9 @@ public class App {
         while (numWeClick != null && points > 0) {
             listPage.openNotFadedGameByNumber(numWeClick);
             GamePage gamePage = new GamePage();
-            if (gamePage.isWon() || gamePage.isMine()) {
-                log.info("Can't participate: {}", gamePage.getName());
+            if (gamePage.isWon() || gamePage.isEntered()) {
+                String reason = gamePage.isWon() ? "already won" : "already entered";
+                log.info("Can't participate ({}): {}", reason, gamePage.getName());
                 ignoredNums.add(numWeClick);
             } else {
                 gamePage.enterGiveaway();
