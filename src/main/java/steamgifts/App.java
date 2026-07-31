@@ -153,10 +153,8 @@ public class App {
             log.info("Local mode: skipping cookie injection — using browser's existing session.");
         }
 
-        AtomicInteger pointsleft = new AtomicInteger(300);
-        pages.forEach((page) -> {
-            pointsleft.set(drillPage(page, pointsleft.get()));
-        });
+        AtomicInteger pointsLeft = new AtomicInteger(300);
+        pages.forEach((page) -> pointsLeft.set(drillPage(page, pointsLeft.get())));
 
         Optional.ofNullable(PROPERTIES.getProperty("ci")).ifPresentOrElse(prop -> Logger.getGlobal().info("Goodbye"),
                 ThrowingRunnable.unchecked(() -> waitForInput("Finishing. Press Enter.")));
@@ -237,7 +235,7 @@ public class App {
                 gamePage.enterGiveaway();
             }
             Selenide.back();
-            Selenide.refresh(); // hotfix for cache_err
+           // Selenide.refresh(); // hotfix for cache_err
             Utils.pause(4 + RANDOM.nextInt(6)); // random 4–9s to avoid uniform timing fingerprint
             points = listPage.getPoints();
             numWeClick = listPage.getLinkNumberWithPointsWeCanHandle(points, ignoredNums);

@@ -1,5 +1,6 @@
 package steamgifts.pages;
 
+import com.codeborne.selenide.ClickOptions;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.SelenideElement;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +20,7 @@ public class GamePage extends BaseForm {
 
     public void enterGiveaway() {
         log.info("Entering giveaway for {}", seGameName.getText());
-        seEnter.click();
+        seEnter.click(ClickOptions.usingJavaScript());
         seRemoveEntry.should(Condition.appear, Duration.of(20, ChronoUnit.SECONDS)); //todo: take from params
     }
 
