@@ -13,7 +13,8 @@ import static com.codeborne.selenide.Selenide.$;
 @Slf4j
 public class GamePage extends BaseForm {
 
-    private final SelenideElement seWon = $(".sidebar__error");
+    private final SelenideElement seError = $(".sidebar__error");
+    private final SelenideElement seNotEnoughPoint = $(".fa-exclamation-circle");
     private final SelenideElement seEnter = $(".sidebar__entry-insert");
     private final SelenideElement seRemoveEntry = $(".sidebar__entry-delete");
     private final SelenideElement seGameName = $(".featured__heading__medium");
@@ -25,10 +26,16 @@ public class GamePage extends BaseForm {
     }
 
     public boolean isWon() {
-        return seWon.isDisplayed();
+       // return seError.isDisplayed(); // need to be updated when won game is found to check the actual locator
+    return false;
+    }
+
+    public boolean isNotEnoughPoint() {
+        return seNotEnoughPoint.isDisplayed();
     }
 
     public boolean isEntered() {
+        seEnter.should(Condition.appear, Duration.of(5, ChronoUnit.SECONDS));
         return !seEnter.isDisplayed();
     }
 

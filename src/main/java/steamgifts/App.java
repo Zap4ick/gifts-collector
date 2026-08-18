@@ -13,7 +13,6 @@ import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
-import java.util.stream.IntStream;
 
 @Slf4j
 public class App {
@@ -182,7 +181,6 @@ public class App {
             return pointsleft;
         }
 
-        List<Integer> ignoredNums = new ArrayList<>();
         Selenide.open(page);
 
         if (System.getProperty(CAPTCHA_PASSED_KEY) == null) {
@@ -201,7 +199,16 @@ public class App {
             throw new RuntimeException("Seems like we are suspened :( Aborting mission!");
         }
 
-        if (!new BaseForm().isLoggedIn()) {
+        if (isLocalMode()) {
+            while (!new BaseForm().isLoggedIn()) {
+                waitForInput("""
+                        
+                        Not logged in to steamgifts.com.
+                        Please log in to https://www.steamgifts.com in the Chrome window.
+                        """);
+                Selenide.refresh();
+            }
+        } else if (!new BaseForm().isLoggedIn()) {
             throw new RuntimeException("We are not logged in! Check cookie in props!");
         }
 
@@ -210,12 +217,29 @@ public class App {
         listPage.closeBannerIfPresent();
         listPage.closeModalWinIfPresent();
         int points;
+        int minimumCostSeen = Integer.MAX_VALUE;
+
+        List<Integer> ignoredNums = new ArrayList<>();
         do {
             points = listPage.getPoints();
+            int linksCount = listPage.getLinksCount();
+
             if (points == 0) {
+                log.info("No more points, skipping.");
+                break;
+            }
+
+            if (linksCount == 0) {
+                log.info("No more links on this page, skipping.");
                 break;
             }
             optOutPinnedGames(listPage, ignoredNums);
+            int pageMinCost = listPage.getMinimumPointsCost(ignoredNums);
+            minimumCostSeen = Math.min(minimumCostSeen, pageMinCost);
+            if (minimumCostSeen < Integer.MAX_VALUE && points < minimumCostSeen) {
+                log.info("Points ({}) below minimum giveaway cost ({}) — stopping early.", points, minimumCostSeen);
+                break;
+            }
             clickThrough(ignoredNums, listPage, points);
         } while (listPage.clickNextIfPresent());
         log.info("Points: {}, Games left: {}", listPage.getPoints(), listPage.hasNotFadedGames());
@@ -227,8 +251,8 @@ public class App {
         while (numWeClick != null && points > 0) {
             listPage.openNotFadedGameByNumber(numWeClick);
             GamePage gamePage = new GamePage();
-            if (gamePage.isWon() || gamePage.isEntered()) {
-                String reason = gamePage.isWon() ? "already won" : "already entered";
+            if (gamePage.isWon() || gamePage.isEntered() || gamePage.isNotEnoughPoint()) {
+                String reason = gamePage.isWon() ? "already won" : gamePage.isEntered() ? "already entered" : "not enough points";
                 log.info("Can't participate ({}): {}", reason, gamePage.getName());
                 ignoredNums.add(numWeClick);
             } else {
@@ -243,7 +267,8 @@ public class App {
     }
 
     private static void optOutPinnedGames(ListPage listPage, List<Integer> ignoredNums) {
-        int pinnedGamesNum = listPage.getPinnedGamesNum();
-        IntStream.range(0, pinnedGamesNum).forEach(ignoredNums::add);
+        listPage.getPinnedGameIndices().stream()
+                .filter(i -> !ignoredNums.contains(i))
+                .forEach(ignoredNums::add);
     }
 }
