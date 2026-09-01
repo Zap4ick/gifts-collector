@@ -85,6 +85,9 @@ public class App {
     public static void main(String[] args) {
         Configuration.browser = "chrome";
         Configuration.browserSize = "1366x768";
+        Configuration.screenshots = false;
+        Configuration.savePageSource = false;
+        String chromeDebugUserDataDir = System.getProperty("user.home") + "/.chrome-steamgifts";
 
         String profileDir = PROPERTIES.getProperty(CHROME_PROFILE_DIR_KEY, "").trim();
         String localPort = PROPERTIES.getProperty(LOCAL_BROWSER_PORT_KEY, "").trim();
@@ -106,8 +109,8 @@ public class App {
                         
                         Chrome is not running with remote debugging.
                         Please start it with:
-                          /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=%d --user-data-dir=~/.chrome-steamgifts
-                        """.formatted(port));
+                          /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=%d --user-data-dir=%s
+                        """.formatted(port, chromeDebugUserDataDir));
             }
 
             log.info("Local mode: attaching to running Chrome at {}", debuggerAddress);
@@ -155,10 +158,14 @@ public class App {
         AtomicInteger pointsLeft = new AtomicInteger(300);
         pages.forEach((page) -> pointsLeft.set(drillPage(page, pointsLeft.get())));
 
+        try {
+            Selenide.closeWebDriver();
+        } catch (org.openqa.selenium.WebDriverException e) {
+            log.warn("Browser session already closed or disconnected, skipping driver close: {}", e.getMessage());
+        }
+
         Optional.ofNullable(PROPERTIES.getProperty("ci")).ifPresentOrElse(prop -> Logger.getGlobal().info("Goodbye"),
                 ThrowingRunnable.unchecked(() -> waitForInput("Finishing. Press Enter.")));
-
-        Selenide.closeWebDriver();
     }
 
     @FunctionalInterface
@@ -251,15 +258,16 @@ public class App {
         while (numWeClick != null && points > 0) {
             listPage.openNotFadedGameByNumber(numWeClick);
             GamePage gamePage = new GamePage();
-            if (gamePage.isWon() || gamePage.isEntered() || gamePage.isNotEnoughPoint()) {
+            if (gamePage.isError()) {
+                log.info("Error encountered on game page: {}", gamePage.getName());
+                ignoredNums.add(numWeClick);
                 String reason = gamePage.isWon() ? "already won" : gamePage.isEntered() ? "already entered" : "not enough points";
                 log.info("Can't participate ({}): {}", reason, gamePage.getName());
-                ignoredNums.add(numWeClick);
             } else {
                 gamePage.enterGiveaway();
             }
             Selenide.back();
-           // Selenide.refresh(); // hotfix for cache_err
+            // Selenide.refresh(); // hotfix for cache_err
             Utils.pause(4 + RANDOM.nextInt(6)); // random 4–9s to avoid uniform timing fingerprint
             points = listPage.getPoints();
             numWeClick = listPage.getLinkNumberWithPointsWeCanHandle(points, ignoredNums);

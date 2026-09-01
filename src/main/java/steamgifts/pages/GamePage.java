@@ -9,11 +9,13 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
 import static com.codeborne.selenide.Selenide.$;
+import static com.codeborne.selenide.Selenide.$x;
 
 @Slf4j
 public class GamePage extends BaseForm {
 
     private final SelenideElement seError = $(".sidebar__error");
+    private final SelenideElement seWon = $x("//div[contains(@class,'sidebar__error')][contains(text(),'Won')]");
     private final SelenideElement seNotEnoughPoint = $(".fa-exclamation-circle");
     private final SelenideElement seEnter = $(".sidebar__entry-insert");
     private final SelenideElement seRemoveEntry = $(".sidebar__entry-delete");
@@ -25,9 +27,12 @@ public class GamePage extends BaseForm {
         seRemoveEntry.should(Condition.appear, Duration.of(20, ChronoUnit.SECONDS)); //todo: take from params
     }
 
+    public boolean isError() {
+        return seError.isDisplayed();
+    }
+
     public boolean isWon() {
-       // return seError.isDisplayed(); // need to be updated when won game is found to check the actual locator
-    return false;
+       return seWon.isDisplayed();
     }
 
     public boolean isNotEnoughPoint() {
