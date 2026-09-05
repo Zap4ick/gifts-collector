@@ -264,7 +264,7 @@ public class App {
                 String reason = gamePage.isWon() ? "already won" : gamePage.isEntered() ? "already entered" : "not enough points";
                 log.info("Can't participate ({}): {}", reason, gamePage.getName());
             } else {
-                if (!gamePage.isEntered()) { // no error but no button either
+                if (gamePage.isEntered()) { // no error but no button either
                     ignoredNums.add(numWeClick);
                     log.info("Can't participate ({}): {}", gamePage.getName(), "button is not present");
                 }
