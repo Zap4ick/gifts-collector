@@ -23,6 +23,41 @@ public class Utils {
     }
 
     /**
+     * Builds ChromeOptions that attach to an already-running Chrome instance
+     * via Chrome DevTools Protocol (CDP) remote debugging.
+     *
+     * Start Chrome first with:
+     *   google-chrome --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug
+     */
+    public static ChromeOptions buildAttachOptions(String debuggerAddress) {
+        ChromeOptions options = new ChromeOptions();
+        options.setExperimentalOption("debuggerAddress", debuggerAddress);
+        return options;
+    }
+
+    /**
+     * Builds ChromeOptions that launch Chrome with the user's real profile.
+     * Cloudflare sees a genuine browser fingerprint and typically skips the captcha.
+     * Chrome must NOT already be running with this profile when the app starts.
+     * Stealth flags are intentionally omitted — the real profile is already trusted.
+     */
+    public static ChromeOptions buildProfileOptions(String profileDir) {
+        ChromeOptions options = new ChromeOptions();
+        options.addArguments("--user-data-dir=" + profileDir);
+        options.addArguments("--profile-directory=Default");
+        options.addArguments("--no-first-run");
+        options.addArguments("--no-default-browser-check");
+        options.addArguments("--disable-infobars");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--remote-allow-origins=*");
+        options.addArguments("--disable-extensions");
+        options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
+        options.setExperimentalOption("useAutomationExtension", false);
+        return options;
+    }
+
+    /**
      * Builds ChromeOptions configured to look as human-like as possible.
      */
     public static ChromeOptions buildStealthOptions() {
@@ -34,6 +69,8 @@ public class Utils {
         options.addArguments("--disable-infobars");
         options.addArguments("--no-first-run");
         options.addArguments("--no-default-browser-check");
+        // Disable site isolation so CDP stealth script also runs inside cross-origin iframes (e.g. Turnstile)
+        options.addArguments("--disable-features=IsolateOrigins,site-per-process");
         options.setExperimentalOption("excludeSwitches", new String[]{"enable-automation"});
         options.setExperimentalOption("useAutomationExtension", false);
 
@@ -53,8 +90,14 @@ public class Utils {
     public static void injectStealthScript(ChromiumDriver driver) {
         driver.executeCdpCommand("Page.addScriptToEvaluateOnNewDocument", Map.of("source", """
                 Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
-                window.chrome = { runtime: {} };
+                window.chrome = {
+                    runtime: {},
+                    loadTimes: function() {},
+                    csi: function() {},
+                    app: {}
+                };
                 Object.defineProperty(navigator, 'plugins',            { get: () => [1, 2, 3, 4, 5] });
+                Object.defineProperty(navigator, 'mimeTypes',          { get: () => [1, 2, 3] });
                 Object.defineProperty(navigator, 'languages',          { get: () => ['en-US', 'en'] });
                 Object.defineProperty(navigator, 'platform',           { get: () => 'Win32' });
                 Object.defineProperty(navigator, 'hardwareConcurrency',{ get: () => 8 });
@@ -63,6 +106,13 @@ public class Utils {
                 Object.defineProperty(screen, 'height',     { get: () => 768 });
                 Object.defineProperty(screen, 'colorDepth', { get: () => 24 });
                 Object.defineProperty(screen, 'pixelDepth', { get: () => 24 });
+                Object.defineProperty(window, 'outerWidth',  { get: () => 1366 });
+                Object.defineProperty(window, 'outerHeight', { get: () => 768 });
+                const origQuery = window.navigator.permissions.query.bind(navigator.permissions);
+                window.navigator.permissions.query = (parameters) =>
+                    parameters.name === 'notifications'
+                        ? Promise.resolve({ state: Notification.permission })
+                        : origQuery(parameters);
                 const getParameter = WebGLRenderingContext.prototype.getParameter;
                 WebGLRenderingContext.prototype.getParameter = function(parameter) {
                     if (parameter === 37445) return 'Intel Inc.';
