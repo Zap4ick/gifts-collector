@@ -1,8 +1,10 @@
 package steamgifts;
 
+import com.codeborne.selenide.Selenide;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.chromium.ChromiumDriver;
 
@@ -19,6 +21,31 @@ public class Utils {
             TimeUnit.SECONDS.sleep(secs);
         } catch (InterruptedException e) {
             log.warn("Exception in thread sleeping: ", e);
+        }
+    }
+
+    /**
+     * Navigates back with retry logic to handle timeout issues.
+     * Retries up to 3 times if TimeoutException occurs.
+     */
+    public static void navigateBackSafely() {
+        int maxRetries = 3;
+        int attempt = 0;
+
+        while (attempt < maxRetries) {
+            try {
+                Selenide.back();
+                log.debug("Successfully navigated back");
+                return;
+            } catch (TimeoutException e) {
+                attempt++;
+                if (attempt >= maxRetries) {
+                    log.error("Failed to navigate back after {} attempts. Last error: {}", maxRetries, e.getMessage());
+                    throw e;
+                }
+                log.warn("Timeout navigating back (attempt {}/{}), retrying...", attempt, maxRetries);
+                pause(2); // Wait 2 seconds before retrying
+            }
         }
     }
 

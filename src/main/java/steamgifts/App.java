@@ -272,7 +272,7 @@ public class App {
                     gamePage.enterGiveaway();
                 }
             }
-            Selenide.back();
+            Utils.navigateBackSafely();
             // Selenide.refresh(); // hotfix for cache_err
             Utils.pause(4 + RANDOM.nextInt(6)); // random 4–9s to avoid uniform timing fingerprint
             points = listPage.getPoints();
