@@ -87,6 +87,7 @@ public class App {
         Configuration.browserSize = "1366x768";
         Configuration.screenshots = false;
         Configuration.savePageSource = false;
+        Utils.disableChromeDriverBuildCheck();
         String chromeDebugUserDataDir = System.getProperty("user.home") + "/.chrome-steamgifts";
 
         String profileDir = PROPERTIES.getProperty(CHROME_PROFILE_DIR_KEY, "").trim();

@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.chromium.ChromiumDriver;
 
@@ -47,6 +48,16 @@ public class Utils {
                 pause(2); // Wait 2 seconds before retrying
             }
         }
+    }
+
+    /**
+     * Disables chromedriver's strict "only supports Chrome version N" check.
+     * Selenium Manager picks the driver for the Chrome binary on disk, which can differ from the
+     * Chrome actually running — e.g. Chrome auto-updated to 156 but the attached instance on the
+     * debug port is still 155 until restarted. Adjacent versions work fine together.
+     */
+    public static void disableChromeDriverBuildCheck() {
+        System.setProperty(ChromeDriverService.CHROME_DRIVER_DISABLE_BUILD_CHECK, "true");
     }
 
     /**
