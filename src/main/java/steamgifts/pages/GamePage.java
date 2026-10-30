@@ -3,6 +3,7 @@ package steamgifts.pages;
 import com.codeborne.selenide.ClickOptions;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.SelenideElement;
+import com.codeborne.selenide.ex.UIAssertionError;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -40,7 +41,11 @@ public class GamePage extends BaseForm {
     }
 
     public boolean isEntered() {
-        seEnter.should(Condition.appear, Duration.of(5, ChronoUnit.SECONDS));
+        try {
+            seEnter.should(Condition.appear, Duration.of(5, ChronoUnit.SECONDS));
+        } catch (UIAssertionError e) {
+            return true;
+        }
         return !seEnter.isDisplayed();
     }
 
