@@ -9,7 +9,10 @@ import org.openqa.selenium.chromium.ChromiumDriver;
 import steamgifts.pages.*;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -22,6 +25,7 @@ public class App {
     private static final String CF_CLEARANCE_FIELD_NAME = "cf_clearance";
     private static final String CHROME_PROFILE_DIR_KEY = "chrome_profile_dir";
     private static final String LOCAL_BROWSER_PORT_KEY = "local_browser_port";
+    private static final String LOCAL_CONFIG_FILE = "config.local.properties";
     private static final Properties PROPERTIES = new Properties();
 
     private static final String CAPTCHA_PASSED_KEY = "CAPTCHA_PASSED";
@@ -34,10 +38,15 @@ public class App {
     private static void readProperties() {
         try {
             PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
-            Optional.ofNullable(System.getenv(COOKIE_PROP_KEY)).ifPresent(value -> PROPERTIES.setProperty(COOKIE_PROP_KEY, value));
-            if (PROPERTIES.getProperty(COOKIE_PROP_KEY).isEmpty()) {
-                throw new RuntimeException("No cookie has been read from props!");
+            // Optional git-ignored overrides (secrets live here, not in the committed file)
+            Path localConfig = Path.of(LOCAL_CONFIG_FILE);
+            if (Files.isRegularFile(localConfig)) {
+                try (Reader reader = Files.newBufferedReader(localConfig)) {
+                    PROPERTIES.load(reader);
+                }
+                log.info("Loaded local overrides from {}", localConfig.toAbsolutePath());
             }
+            Optional.ofNullable(System.getenv(COOKIE_PROP_KEY)).ifPresent(value -> PROPERTIES.setProperty(COOKIE_PROP_KEY, value));
             Optional.ofNullable(System.getenv(CF_CLEARANCE_FIELD_NAME)).ifPresent(value -> PROPERTIES.setProperty(CF_CLEARANCE_FIELD_NAME, value));
 
             Optional.ofNullable(System.getenv("CI")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
@@ -136,6 +145,10 @@ public class App {
         }
 
         if (!isLocalMode()) {
+            if (PROPERTIES.getProperty(COOKIE_PROP_KEY, "").isBlank()) {
+                throw new RuntimeException("No cookie has been read from props! Set env var '"
+                        + COOKIE_PROP_KEY + "' or put it into " + LOCAL_CONFIG_FILE);
+            }
             WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
             WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));
 

@@ -5,7 +5,14 @@ This is a simple gifts grabber from steam gifts site.
 
 ## Using
 
-Log in to steam gifts site with your steam account, go to dev tools (F12) in browser and look for PHPSESSID cookie. Put it in config.properties file or env variable.
+Log in to steam gifts site with your steam account, go to dev tools (F12) in browser and look for PHPSESSID cookie. Pass it via the `cookie` env variable, or put it into a `config.local.properties` file in the working directory (git-ignored, overrides `src/main/resources/config.properties`):
+
+```properties
+cookie=<PHPSESSID value>
+cf_clearance=<optional>
+```
+
+> ⚠️ Never put real cookie values into `src/main/resources/config.properties` — that file is committed.
 
 ## Quick Start (one command)
 
