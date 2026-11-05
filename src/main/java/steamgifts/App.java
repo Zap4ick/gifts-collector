@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.logging.Logger;
 
 @Slf4j
 public class App {
@@ -231,26 +230,14 @@ public class App {
 
         try {
             Selenide.closeWebDriver();
-        } catch (org.openqa.selenium.WebDriverException e) {
+        } catch (WebDriverException e) {
             log.warn("Browser session already closed or disconnected, skipping driver close: {}", e.getMessage());
         }
 
-        Optional.ofNullable(PROPERTIES.getProperty("ci")).ifPresentOrElse(prop -> Logger.getGlobal().info("Goodbye"),
-                ThrowingRunnable.unchecked(() -> waitForInput("Finishing. Press Enter.")));
-    }
-
-    @FunctionalInterface
-    public interface ThrowingRunnable {
-        void run() throws IOException;
-
-        static Runnable unchecked(ThrowingRunnable f) {
-            return () -> {
-                try {
-                    f.run();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            };
+        if (PROPERTIES.getProperty("ci") != null) {
+            log.info("Goodbye");
+        } else {
+            waitForInput("Finishing. Press Enter.");
         }
     }
 
