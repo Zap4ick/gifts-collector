@@ -38,8 +38,9 @@ public class ListPage extends BaseForm {
             if (!link.exists() || !costLabel.isDisplayed()) {
                 continue;
             }
+            String url = link.getAttribute("href");
             SelenideElement nameLink = row.$x(".//a[contains(@class,'giveaway__heading__name')]");
-            String name = nameLink.exists() ? nameLink.text() : link.getAttribute("href");
+            String name = nameLink.exists() ? nameLink.text() : url;
             String costText = costLabel.getText();
             OptionalInt cost = parseCost(costText);
             if (cost.isEmpty()) {
@@ -47,7 +48,7 @@ public class ListPage extends BaseForm {
                 continue;
             }
             boolean pinned = row.$x("ancestor::*[contains(@class,'pinned-giveaways')]").exists();
-            giveaways.add(new Giveaway(link.getAttribute("href"), name, cost.getAsInt(), pinned));
+            giveaways.add(new Giveaway(url, name, cost.getAsInt(), pinned));
         }
         return giveaways;
     }

@@ -25,7 +25,7 @@ cf_clearance=<optional>
 The script will:
 1. Launch Chrome with remote debugging on port 9222 (skipped if something already listens on that port).
 2. Wait until Chrome is ready.
-3. Run the app with `mvn exec:java`, attached to that Chrome.
+3. Build and run the app with `mvn compile exec:java`, attached to that Chrome.
 
 The port is taken from the `LOCAL_BROWSER_PORT` env var, else from `local_browser_port` in `config.local.properties`, else 9222. Chrome is auto-detected; set `CHROME_BIN=/path/to/chrome` if it isn't found.
 
@@ -69,7 +69,7 @@ The terminal will appear to hang — that's normal. Chrome is running in it.
 **Step 3 — Run the app:**
 
 ```bash
-mvn exec:java
+mvn compile exec:java
 ```
 
 The app will open steamgifts.com in your Chrome window. If not logged in, it will pause and ask you to log in before continuing.
@@ -86,7 +86,7 @@ Set `chrome_profile_dir` in `config.local.properties` (or `CHROME_PROFILE_DIR` e
 - Linux: `/home/<you>/.config/google-chrome`
 - Windows: `C:\Users\<you>\AppData\Local\Google\Chrome\User Data`
 
-Then run `mvn exec:java`. Cookie injection is skipped — the browser already has your session.
+Then run `mvn compile exec:java`. Cookie injection is skipped — the browser already has your session.
 
 ## Built With
 

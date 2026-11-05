@@ -2,7 +2,7 @@
 # One-command local run in "attach" mode:
 #   1. start Chrome with remote debugging (skipped if something already listens on the port)
 #   2. wait until Chrome is ready
-#   3. run the app with `mvn exec:java`, attached to that Chrome
+#   3. build and run the app with `mvn compile exec:java`, attached to that Chrome
 #
 # Port: LOCAL_BROWSER_PORT env var, else local_browser_port from config.local.properties, else 9222.
 # Chrome binary: CHROME_BIN env var, else auto-detected (macOS / Linux).
@@ -42,7 +42,8 @@ find_chrome() {
 }
 
 chrome_ready() {
-    curl -s -o /dev/null "http://127.0.0.1:$port/json/version"
+    # --noproxy: a configured http_proxy must not swallow this local request
+    curl -s --noproxy '*' -o /dev/null "http://127.0.0.1:$port/json/version"
 }
 
 if chrome_ready; then
@@ -62,4 +63,5 @@ else
     fi
 fi
 
-exec mvn -q exec:java
+# compile first: exec:java alone runs whatever is in target/ (stale or missing classes)
+exec mvn -q compile exec:java
