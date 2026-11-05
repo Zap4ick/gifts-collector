@@ -31,6 +31,13 @@ public class BaseForm {
         return seModalWin.isDisplayed();
     }
 
+    /** Closes consent dialog, cookie banner and "gift received" popup if any of them is shown. */
+    public void dismissOverlays() {
+        consentIfPresent();
+        closeBannerIfPresent();
+        closeModalWinIfPresent();
+    }
+
     public void closeBannerIfPresent() {
         if (isBannerPresent()) {
             btnCloseBanner.click();

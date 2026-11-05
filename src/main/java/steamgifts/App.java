@@ -239,69 +239,71 @@ public class App {
         }
 
         ListPage listPage = new ListPage();
-        listPage.consentIfPresent();
-        listPage.closeBannerIfPresent();
-        listPage.closeModalWinIfPresent();
+        listPage.dismissOverlays();
         int points;
         int minimumCostSeen = Integer.MAX_VALUE;
 
-        List<Integer> ignoredNums = new ArrayList<>();
+        // Giveaways already opened in this category; keyed by URL because row indexes shift
+        // when an entered giveaway fades out and differ between pagination pages.
+        Set<String> visited = new HashSet<>();
         do {
             points = listPage.getPoints();
-            int linksCount = listPage.getLinksCount();
-
             if (points == 0) {
                 log.info("No more points, skipping.");
                 break;
             }
 
-            if (linksCount == 0) {
-                log.info("No more links on this page, skipping.");
+            List<Giveaway> candidates = listPage.getGiveaways().stream()
+                    .filter(g -> !g.pinned() && !visited.contains(g.url()))
+                    .toList();
+            if (candidates.isEmpty()) {
+                log.info("No more giveaways on this page, skipping.");
                 break;
             }
-            optOutPinnedGames(listPage, ignoredNums);
-            int pageMinCost = listPage.getMinimumPointsCost(ignoredNums);
+
+            int pageMinCost = candidates.stream().mapToInt(Giveaway::cost).min().orElse(Integer.MAX_VALUE);
             minimumCostSeen = Math.min(minimumCostSeen, pageMinCost);
-            if (minimumCostSeen < Integer.MAX_VALUE && points < minimumCostSeen) {
+            if (points < minimumCostSeen) {
                 log.info("Points ({}) below minimum giveaway cost ({}) — stopping early.", points, minimumCostSeen);
                 break;
             }
-            clickThrough(ignoredNums, listPage, points);
+            enterAffordableGiveaways(listPage, visited);
         } while (listPage.clickNextIfPresent());
         log.info("Points: {}, Games left: {}", listPage.getPoints(), listPage.hasNotFadedGames());
         return points;
     }
 
-    private static void clickThrough(List<Integer> ignoredNums, ListPage listPage, int points) {
-        Integer numWeClick = listPage.getLinkNumberWithPointsWeCanHandle(points, ignoredNums);
-        while (numWeClick != null && points > 0) {
-            listPage.openNotFadedGameByNumber(numWeClick);
+    private static void enterAffordableGiveaways(ListPage listPage, Set<String> visited) {
+        String listUrl = WebDriverRunner.url();
+        Optional<Giveaway> next = findAffordable(listPage, visited);
+        while (next.isPresent()) {
+            Giveaway giveaway = next.get();
+            visited.add(giveaway.url()); // never open the same giveaway twice, whatever happens on its page
+            Selenide.open(giveaway.url());
+
             GamePage gamePage = new GamePage();
             if (gamePage.isError()) {
                 log.info("Error encountered on game page: {}", gamePage.getName());
-                ignoredNums.add(numWeClick);
                 String reason = gamePage.isWon() ? "already won" : gamePage.isEntered() ? "already entered" : "not enough points";
                 log.info("Can't participate ({}): {}", reason, gamePage.getName());
+            } else if (gamePage.isEntered()) { // no error but no button either
+                log.info("Can't participate ({}): {}", gamePage.getName(), "button is not present");
             } else {
-                if (gamePage.isEntered()) { // no error but no button either
-                    ignoredNums.add(numWeClick);
-                    log.info("Can't participate ({}): {}", gamePage.getName(), "button is not present");
-                }
-                else {
-                    gamePage.enterGiveaway();
-                }
+                gamePage.enterGiveaway();
             }
-            Utils.navigateBackSafely();
-            // Selenide.refresh(); // hotfix for cache_err
+
+            // Reload the list instead of navigating back: no stale cached page, entered rows are faded
+            Selenide.open(listUrl);
+            listPage.dismissOverlays();
             Utils.pause(4 + RANDOM.nextInt(6)); // random 4–9s to avoid uniform timing fingerprint
-            points = listPage.getPoints();
-            numWeClick = listPage.getLinkNumberWithPointsWeCanHandle(points, ignoredNums);
+            next = findAffordable(listPage, visited);
         }
     }
 
-    private static void optOutPinnedGames(ListPage listPage, List<Integer> ignoredNums) {
-        listPage.getPinnedGameIndices().stream()
-                .filter(i -> !ignoredNums.contains(i))
-                .forEach(ignoredNums::add);
+    private static Optional<Giveaway> findAffordable(ListPage listPage, Set<String> visited) {
+        int points = listPage.getPoints();
+        return listPage.getGiveaways().stream()
+                .filter(g -> !g.pinned() && !visited.contains(g.url()) && g.cost() <= points)
+                .findFirst();
     }
 }

@@ -1,72 +1,64 @@
 package steamgifts.pages;
 
-import com.codeborne.selenide.ClickOptions;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 
 import static com.codeborne.selenide.Selenide.$$x;
 import static com.codeborne.selenide.Selenide.$x;
 
+@Slf4j
 public class ListPage extends BaseForm {
 
     private static final String NOT_FADED_ROW =
             "//div[contains(@class,'giveaway__row-inner-wrap') and not(contains(@class,'is-faded'))]";
 
-    private final ElementsCollection seNotFadedLink = $$x(
-            NOT_FADED_ROW + "//a[contains(@class,'giveaway_image_thumbnail')]");
-    private final ElementsCollection seNotFadedPoints = $$x(
-            NOT_FADED_ROW + "//h2/span[@class='giveaway__heading__thin'][last()][text()]");
+    private final ElementsCollection seNotFadedRows = $$x(NOT_FADED_ROW);
 
     private final SelenideElement seNextPage = $x("//a[./span[text()='Next']]");
 
-    public void openNotFadedGameByNumber(int i) {
-        seNotFadedLink.get(i).click(ClickOptions.usingJavaScript());
-    }
-
     public boolean hasNotFadedGames() {
-        return !seNotFadedLink.isEmpty();
+        return !seNotFadedRows.isEmpty();
     }
 
-    public Integer getLinkNumberWithPointsWeCanHandle(int points, List<Integer> ignored) {
-        for (int i = 0; i < getLinksCount(); i++) {
-            if (seNotFadedPoints.get(i).isDisplayed()) {
-                int pointsOfI = Integer.parseInt(StringUtils.substringBetween(seNotFadedPoints.get(i).getText(), "(", "P)"));
-                if (pointsOfI <= points && !ignored.contains(i)) {
-                    return i;
-                }
+    /**
+     * Reads all not-faded giveaway rows in a single pass. Link, cost and pinned flag are taken
+     * from the same row, so they can't get out of sync.
+     */
+    public List<Giveaway> getGiveaways() {
+        List<Giveaway> giveaways = new ArrayList<>();
+        for (SelenideElement row : seNotFadedRows) {
+            SelenideElement link = row.$x(".//a[contains(@class,'giveaway_image_thumbnail')]");
+            SelenideElement costLabel = row.$x(".//h2/span[@class='giveaway__heading__thin'][last()]");
+            if (!link.exists() || !costLabel.isDisplayed()) {
+                continue;
             }
-        }
-        return null;
-    }
-
-    public int getLinksCount() {
-        return seNotFadedPoints.size();
-    }
-
-    public int getMinimumPointsCost(List<Integer> ignored) {
-        int min = Integer.MAX_VALUE;
-        for (int i = 0; i < getLinksCount(); i++) {
-            if (ignored.contains(i)) continue;
-            if (seNotFadedPoints.get(i).isDisplayed()) {
-                int cost = Integer.parseInt(StringUtils.substringBetween(seNotFadedPoints.get(i).getText(), "(", "P)"));
-                if (cost < min) min = cost;
+            SelenideElement nameLink = row.$x(".//a[contains(@class,'giveaway__heading__name')]");
+            String name = nameLink.exists() ? nameLink.text() : link.getAttribute("href");
+            String costText = costLabel.getText();
+            OptionalInt cost = parseCost(costText);
+            if (cost.isEmpty()) {
+                log.warn("Can't parse cost '{}' of giveaway '{}', skipping it", costText, name);
+                continue;
             }
+            boolean pinned = row.$x("ancestor::*[contains(@class,'pinned-giveaways')]").exists();
+            giveaways.add(new Giveaway(link.getAttribute("href"), name, cost.getAsInt(), pinned));
         }
-        return min;
+        return giveaways;
     }
 
-    public List<Integer> getPinnedGameIndices() {
-        List<Integer> indices = new ArrayList<>();
-        for (int i = 0; i < seNotFadedLink.size(); i++) {
-            if (seNotFadedLink.get(i).$x("ancestor::*[contains(@class,'pinned-giveaways')]").exists()) {
-                indices.add(i);
-            }
+    /** Parses a cost label like "(10P)". */
+    static OptionalInt parseCost(String label) {
+        String digits = StringUtils.substringBetween(label, "(", "P)");
+        if (digits == null || !StringUtils.isNumeric(digits)) {
+            return OptionalInt.empty();
         }
-        return indices;
+        return OptionalInt.of(Integer.parseInt(digits));
     }
 
     public boolean clickNextIfPresent() {
