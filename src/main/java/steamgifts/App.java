@@ -82,10 +82,15 @@ public class App {
         System.out.println(message);
         System.out.print("Press Enter when ready... ");
         try {
-            //noinspection ResultOfMethodCallIgnored
+            if (System.in.read() == -1) {
+                // No interactive console (e.g. CI): waiting would spin forever
+                throw new IllegalStateException("stdin is closed, cannot wait for user input. Message was: " + message.strip());
+            }
             // drain rest of line
-            do System.in.read();
-            while (System.in.available() > 0);
+            while (System.in.available() > 0) {
+                //noinspection ResultOfMethodCallIgnored
+                System.in.read();
+            }
         } catch (IOException e) {
             log.warn("Error reading input", e);
         }

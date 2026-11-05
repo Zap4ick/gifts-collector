@@ -16,7 +16,7 @@ cf_clearance=<optional>
 
 ## Quick Start (one command)
 
-Make sure `config.properties` has `local_browser_port=9222`, then just run:
+Make sure `config.local.properties` has `local_browser_port=9222`, then just run:
 
 ```bash
 ./run.sh
@@ -35,16 +35,16 @@ The script will:
 
 ### CI / headless (GitHub Actions)
 
-The app runs automatically via GitHub Actions. Cookie and `cf_clearance` values are read from environment variables / `config.properties`.
+The app runs automatically via GitHub Actions. Cookie and `cf_clearance` values are read from environment variables (repository secrets `COOKIE` / `CF_CLEARANCE`).
 
 ### Local — Attach to Chrome (recommended for local use)
 
 This mode attaches to a Chrome browser you started yourself, bypassing Cloudflare captcha entirely. The app will prompt you if Chrome isn't running or you're not logged in.
 
-**Step 1 — Set the config flag** (once):
+**Step 1 — Set the config flag** (once) in `config.local.properties` (or `LOCAL_BROWSER_PORT` env var). Keep it out of the committed `config.properties`, otherwise CI would try to attach to a local browser:
 
 ```properties
-# config.properties
+# config.local.properties
 local_browser_port=9222
 ```
 
@@ -75,7 +75,7 @@ Chrome recognises the browser as genuine so the captcha is typically skipped ent
 
 > ⚠️ **macOS note:** Likely to fail due to OS-level security restrictions. Use the **Local — Attach to Chrome** mode above instead.
 
-Set `chrome_profile_dir` in `config.properties`:
+Set `chrome_profile_dir` in `config.local.properties` (or `CHROME_PROFILE_DIR` env var):
 - Linux: `/home/<you>/.config/google-chrome`
 - Windows: `C:\Users\<you>\AppData\Local\Google\Chrome\User Data`
 

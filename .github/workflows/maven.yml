@@ -19,6 +19,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    # Normal run takes ~5 min; fail fast instead of hanging until the 6h GitHub limit
+    timeout-minutes: 45
 
     steps:
     - uses: actions/checkout@v4
