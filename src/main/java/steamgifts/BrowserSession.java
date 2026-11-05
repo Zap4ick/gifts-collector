@@ -18,6 +18,8 @@ public class BrowserSession {
 
     private static final String SESSION_COOKIE_NAME = "PHPSESSID";
     private static final String CF_CLEARANCE_COOKIE_NAME = "cf_clearance";
+    // Same profile dir as run.sh, so the steamgifts login survives between runs
+    private static final String CHROME_DEBUG_PROFILE_DIR = System.getProperty("user.home") + "/.chrome-steamgifts";
 
     private final Config config;
 
@@ -58,7 +60,6 @@ public class BrowserSession {
     private void attachToRunningChrome() {
         int port = config.localBrowserPort();
         String debuggerAddress = "localhost:" + port;
-        String chromeDebugUserDataDir = System.getProperty("user.home") + "/.chrome-steamgifts";
 
         // Wait until Chrome is listening on the debug port
         while (!isPortOpen("localhost", port)) {
@@ -66,8 +67,9 @@ public class BrowserSession {
 
                     Chrome is not running with remote debugging.
                     Please start it with:
-                      /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=%d --user-data-dir=%s
-                    """.formatted(port, chromeDebugUserDataDir));
+                      %s --remote-debugging-port=%d --user-data-dir=%s
+                    (or just use ./run.sh, which starts Chrome and the app for you)
+                    """.formatted(chromeCommand(), port, CHROME_DEBUG_PROFILE_DIR));
         }
 
         log.info("Local mode: attaching to running Chrome at {}", debuggerAddress);
@@ -129,6 +131,18 @@ public class BrowserSession {
         } catch (WebDriverException e) {
             log.warn("Browser session already closed or disconnected, skipping driver close: {}", e.getMessage());
         }
+    }
+
+    /** How to launch Chrome from a terminal on this OS, for the hint above. */
+    private static String chromeCommand() {
+        String os = System.getProperty("os.name", "").toLowerCase();
+        if (os.contains("mac")) {
+            return "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome";
+        }
+        if (os.contains("win")) {
+            return "\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\"";
+        }
+        return "google-chrome";
     }
 
     private static boolean isPortOpen(String host, int port) {

@@ -5,6 +5,8 @@ This is a simple gifts grabber from steam gifts site.
 
 ## Using
 
+The local modes below use your own logged-in browser and need no cookie. The cookie is only needed for the CI mode (a fresh browser, see below).
+
 Log in to steam gifts site with your steam account, go to dev tools (F12) in browser and look for PHPSESSID cookie. Pass it via the `cookie` env variable, or put it into a `config.local.properties` file in the working directory (git-ignored, overrides `src/main/resources/config.properties`):
 
 ```properties
@@ -14,18 +16,18 @@ cf_clearance=<optional>
 
 > ⚠️ Never put real cookie values into `src/main/resources/config.properties` — that file is committed.
 
-## Quick Start (one command)
-
-Make sure `config.local.properties` has `local_browser_port=9222`, then just run:
+## Quick Start (one command, macOS / Linux)
 
 ```bash
 ./run.sh
 ```
 
 The script will:
-1. Launch Chrome with remote debugging on port 9222 (skipped if Chrome is already running).
+1. Launch Chrome with remote debugging on port 9222 (skipped if something already listens on that port).
 2. Wait until Chrome is ready.
-3. Run the app with `mvn exec:java`.
+3. Run the app with `mvn exec:java`, attached to that Chrome.
+
+The port is taken from the `LOCAL_BROWSER_PORT` env var, else from `local_browser_port` in `config.local.properties`, else 9222. Chrome is auto-detected; set `CHROME_BIN=/path/to/chrome` if it isn't found.
 
 > 💡 The first time Chrome opens, log in to steamgifts.com. Your session is persisted in `~/.chrome-steamgifts`, so subsequent runs start straight away.
 
@@ -57,6 +59,11 @@ local_browser_port=9222
   --user-data-dir=~/.chrome-steamgifts
 ```
 
+```bash
+# Linux
+google-chrome --remote-debugging-port=9222 --user-data-dir=~/.chrome-steamgifts
+```
+
 The terminal will appear to hang — that's normal. Chrome is running in it.
 
 **Step 3 — Run the app:**
@@ -67,7 +74,7 @@ mvn exec:java
 
 The app will open steamgifts.com in your Chrome window. If not logged in, it will pause and ask you to log in before continuing.
 
-> 💡 `--user-data-dir=~/.chrome-steamgifts` persists your session across runs, so you only need to log in once (unless the session expires or your Mac reboots).
+> 💡 `--user-data-dir=~/.chrome-steamgifts` persists your session across runs, so you only need to log in once (unless the session expires).
 
 ### Option A — Use your real Chrome profile (Linux/Windows only)
 

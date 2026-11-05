@@ -28,7 +28,8 @@ public final class ChromeSetup {
      * via Chrome DevTools Protocol (CDP) remote debugging.
      *
      * Start Chrome first with:
-     *   google-chrome --remote-debugging-port=9222 --user-data-dir=/tmp/chrome-debug
+     *   google-chrome --remote-debugging-port=9222 --user-data-dir=~/.chrome-steamgifts
+     * (or use ./run.sh, which does that).
      */
     public static ChromeOptions buildAttachOptions(String debuggerAddress) {
         ChromeOptions options = new ChromeOptions();
