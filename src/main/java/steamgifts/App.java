@@ -14,7 +14,6 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 @Slf4j
@@ -30,6 +29,8 @@ public class App {
 
     private static final String CAPTCHA_PASSED_KEY = "CAPTCHA_PASSED";
     private static final Random RANDOM = new Random();
+    // Cheapest possible giveaway; with fewer points there is nothing left to enter
+    private static final int MIN_GIVEAWAY_COST = 1;
 
     static {
         readProperties();
@@ -174,8 +175,14 @@ public class App {
             log.info("Local mode: skipping cookie injection — using browser's existing session.");
         }
 
-        AtomicInteger pointsLeft = new AtomicInteger(300);
-        pages.forEach((page) -> pointsLeft.set(drillPage(page, pointsLeft.get())));
+        int pointsLeft = Integer.MAX_VALUE; // unknown until the first page is read
+        for (String page : pages) {
+            if (pointsLeft < MIN_GIVEAWAY_COST) {
+                log.info("Out of points ({}), skipping remaining pages.", pointsLeft);
+                break;
+            }
+            pointsLeft = drillPage(page);
+        }
 
         try {
             Selenide.closeWebDriver();
@@ -202,11 +209,8 @@ public class App {
         }
     }
 
-    private static int drillPage(String page, Integer pointsleft) {
-        if (pointsleft < 5) {
-            return pointsleft;
-        }
-
+    /** Enters what it can on one giveaway category and returns the points left afterwards. */
+    private static int drillPage(String page) {
         Selenide.open(page);
 
         if (System.getProperty(CAPTCHA_PASSED_KEY) == null) {
@@ -240,15 +244,14 @@ public class App {
 
         ListPage listPage = new ListPage();
         listPage.dismissOverlays();
-        int points;
         int minimumCostSeen = Integer.MAX_VALUE;
 
         // Giveaways already opened in this category; keyed by URL because row indexes shift
         // when an entered giveaway fades out and differ between pagination pages.
         Set<String> visited = new HashSet<>();
         do {
-            points = listPage.getPoints();
-            if (points == 0) {
+            int points = listPage.getPoints();
+            if (points < MIN_GIVEAWAY_COST) {
                 log.info("No more points, skipping.");
                 break;
             }
@@ -269,8 +272,10 @@ public class App {
             }
             enterAffordableGiveaways(listPage, visited);
         } while (listPage.clickNextIfPresent());
-        log.info("Points: {}, Games left: {}", listPage.getPoints(), listPage.hasNotFadedGames());
-        return points;
+        // Read points again: the value from the loop is stale after giveaways have been entered
+        int pointsLeft = listPage.getPoints();
+        log.info("Points: {}, Games left: {}", pointsLeft, listPage.hasNotFadedGames());
+        return pointsLeft;
     }
 
     private static void enterAffordableGiveaways(ListPage listPage, Set<String> visited) {
