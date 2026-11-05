@@ -3,8 +3,10 @@ package steamgifts;
 import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.WebDriverRunner;
+import com.codeborne.selenide.ex.UIAssertionError;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.Cookie;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.chromium.ChromiumDriver;
 import steamgifts.pages.*;
 
@@ -287,18 +289,13 @@ public class App {
         while (next.isPresent()) {
             Giveaway giveaway = next.get();
             visited.add(giveaway.url()); // never open the same giveaway twice, whatever happens on its page
-            Selenide.open(giveaway.url());
-
-            GamePage gamePage = new GamePage();
-            if (gamePage.isError()) {
-                log.info("Can't participate ({}): {}", gamePage.getErrorText(), giveaway.name());
-                Utils.pause(REJECTED_GIVEAWAY_PAUSE_SECS);
-            } else if (!gamePage.canEnter()) {
-                String reason = gamePage.isEntered() ? "already entered" : "enter button is not present";
-                log.info("Can't participate ({}): {}", reason, giveaway.name());
-            } else {
-                log.info("Entering giveaway for {} ({}P)", giveaway.name(), giveaway.cost());
-                gamePage.enterGiveaway();
+            try {
+                processGiveaway(giveaway);
+            } catch (UIAssertionError | WebDriverException e) {
+                // One broken giveaway page shouldn't abort the whole run. If the browser itself is
+                // gone, reloading the list below fails and stops the run anyway.
+                log.warn("Failed to process giveaway {} ({}), skipping it: {}", giveaway.name(), giveaway.url(), firstLine(e));
+                log.debug("Full error:", e);
             }
 
             // Reload the list instead of navigating back: no stale cached page, entered rows are faded
@@ -307,6 +304,27 @@ public class App {
             Utils.pause(4 + RANDOM.nextInt(6)); // random 4–9s to avoid uniform timing fingerprint
             next = findAffordable(listPage, visited);
         }
+    }
+
+    private static void processGiveaway(Giveaway giveaway) {
+        Selenide.open(giveaway.url());
+
+        GamePage gamePage = new GamePage();
+        if (gamePage.isError()) {
+            log.info("Can't participate ({}): {}", gamePage.getErrorText(), giveaway.name());
+            Utils.pause(REJECTED_GIVEAWAY_PAUSE_SECS);
+        } else if (!gamePage.canEnter()) {
+            String reason = gamePage.isEntered() ? "already entered" : "enter button is not present";
+            log.info("Can't participate ({}): {}", reason, giveaway.name());
+        } else {
+            log.info("Entering giveaway for {} ({}P)", giveaway.name(), giveaway.cost());
+            gamePage.enterGiveaway();
+        }
+    }
+
+    /** Selenide/WebDriver messages are long multi-line dumps; the first line is enough for the log. */
+    private static String firstLine(Throwable e) {
+        return String.valueOf(e.getMessage()).lines().findFirst().orElse("");
     }
 
     private static Optional<Giveaway> findAffordable(ListPage listPage, Set<String> visited) {
