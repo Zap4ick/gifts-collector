@@ -30,7 +30,7 @@ public class BrowserSession {
         Configuration.browserSize = "1366x768";
         Configuration.screenshots = false;
         Configuration.savePageSource = false;
-        Utils.disableChromeDriverBuildCheck();
+        ChromeSetup.disableChromeDriverBuildCheck();
 
         switch (config.runMode()) {
             case PROFILE -> startWithProfile();
@@ -49,9 +49,9 @@ public class BrowserSession {
     private void startWithProfile() {
         String profileDir = config.chromeProfileDir();
         log.info("Local mode: launching Chrome with real profile at '{}'", profileDir);
-        Configuration.browserCapabilities = Utils.buildProfileOptions(profileDir);
+        Configuration.browserCapabilities = ChromeSetup.buildProfileOptions(profileDir);
         Selenide.open(config.site());
-        Utils.injectStealthScript((ChromiumDriver) WebDriverRunner.getWebDriver());
+        ChromeSetup.injectStealthScript((ChromiumDriver) WebDriverRunner.getWebDriver());
     }
 
     /** Option B: attach to an already-running Chrome instance. */
@@ -71,7 +71,7 @@ public class BrowserSession {
         }
 
         log.info("Local mode: attaching to running Chrome at {}", debuggerAddress);
-        Configuration.browserCapabilities = Utils.buildAttachOptions(debuggerAddress);
+        Configuration.browserCapabilities = ChromeSetup.buildAttachOptions(debuggerAddress);
         Selenide.open(config.site());
 
         ensureLoggedIn();
@@ -80,9 +80,9 @@ public class BrowserSession {
 
     /** Default (CI) mode: spawn a fresh Chrome with stealth options. */
     private void startFresh() {
-        Configuration.browserCapabilities = Utils.buildStealthOptions();
+        Configuration.browserCapabilities = ChromeSetup.buildStealthOptions();
         Selenide.open(config.site());
-        Utils.injectStealthScript((ChromiumDriver) WebDriverRunner.getWebDriver());
+        ChromeSetup.injectStealthScript((ChromiumDriver) WebDriverRunner.getWebDriver());
     }
 
     private void injectCookies() {

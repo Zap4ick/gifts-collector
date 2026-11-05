@@ -2,32 +2,16 @@ package steamgifts;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.chrome.ChromeDriverService;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.chromium.ChromiumDriver;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
-@Slf4j
+/** Chrome launch options per run mode and the anti-fingerprinting script. */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class Utils {
-
-    /**
-     * Sleeps for the given time. Interruption means "stop", so it aborts the run instead of
-     * continuing: with the interrupt flag set every later pause would return instantly and the
-     * bot would hammer the site without its deliberate delays.
-     */
-    public static void pause(int secs) {
-        try {
-            TimeUnit.SECONDS.sleep(secs);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Interrupted while pausing, stopping the run", e);
-        }
-    }
+public final class ChromeSetup {
 
     /**
      * Disables chromedriver's strict "only supports Chrome version N" check.

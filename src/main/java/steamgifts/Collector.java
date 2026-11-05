@@ -14,7 +14,6 @@ import steamgifts.pages.SuspensionPage;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 
 /** Walks the giveaway categories and enters every affordable giveaway. */
@@ -29,7 +28,6 @@ public class Collector {
     private static final int REJECTED_GIVEAWAY_PAUSE_SECS = 5;
     // Cheapest possible giveaway; with fewer points there is nothing left to enter
     private static final int MIN_GIVEAWAY_COST = 1;
-    private static final Random RANDOM = new Random();
 
     private final Config config;
     private final BrowserSession session;
@@ -56,7 +54,7 @@ public class Collector {
         Selenide.open(page);
 
         if (!captchaPassed) {
-            Utils.pause(CAPTCHA_CHECK_PAUSE_SECS);
+            Pause.seconds(CAPTCHA_CHECK_PAUSE_SECS);
             CaptchaPage captchaPage = new CaptchaPage();
             if (captchaPage.isOpen()) {
                 if (config.runMode().isLocal()) {
@@ -130,7 +128,7 @@ public class Collector {
             // Reload the list instead of navigating back: no stale cached page, entered rows are faded
             Selenide.open(listUrl);
             listPage.dismissOverlays();
-            Utils.pause(4 + RANDOM.nextInt(6)); // random 4–9s to avoid uniform timing fingerprint
+            Pause.randomSeconds(4, 9);
             next = findAffordable(listPage.getPoints(), listPage.getGiveaways(), visited);
         }
     }
@@ -141,7 +139,7 @@ public class Collector {
         GamePage gamePage = new GamePage();
         if (gamePage.isError()) {
             log.info("Can't participate ({}): {}", gamePage.getErrorText(), giveaway.name());
-            Utils.pause(REJECTED_GIVEAWAY_PAUSE_SECS);
+            Pause.seconds(REJECTED_GIVEAWAY_PAUSE_SECS);
         } else if (!gamePage.canEnter()) {
             String reason = gamePage.isEntered() ? "already entered" : "enter button is not present";
             log.info("Can't participate ({}): {}", reason, giveaway.name());
