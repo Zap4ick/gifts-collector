@@ -14,6 +14,10 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>21</maven.compiler.release>
+        <main.class>steamgifts.App</main.class>
+
+        <lombok.version>1.18.48</lombok.version>
+        <slf4j.version>2.0.20</slf4j.version>
     </properties>
 
     <dependencies>
@@ -28,19 +32,19 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.48</version>
+            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
         <!-- Single logging backend: slf4j -> java.util.logging, configured by src/main/resources/logging.properties -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <version>2.0.20</version>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.20</version>
+            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -58,9 +62,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>
-                                steamgifts.App
-                            </mainClass>
+                            <mainClass>${main.class}</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
@@ -73,21 +75,18 @@
                         <goals>
                             <goal>single</goal>
                         </goals>
-
                     </execution>
                 </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.16.0</version>
                 <configuration>
-                    <release>${maven.compiler.release}</release>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>1.18.48</version>
+                            <version>${lombok.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
@@ -119,7 +118,7 @@
                     <configuration>
                         <archive>
                             <manifest>
-                                <mainClass>steamgifts.App</mainClass>
+                                <mainClass>${main.class}</mainClass>
                             </manifest>
                         </archive>
                     </configuration>
@@ -146,7 +145,7 @@
                     <artifactId>exec-maven-plugin</artifactId>
                     <version>3.6.4</version>
                     <configuration>
-                        <mainClass>steamgifts.App</mainClass>
+                        <mainClass>${main.class}</mainClass>
                     </configuration>
                 </plugin>
             </plugins>
