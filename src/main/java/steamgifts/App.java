@@ -11,8 +11,12 @@ import org.openqa.selenium.chromium.ChromiumDriver;
 import steamgifts.pages.*;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -27,6 +31,8 @@ public class App {
     private static final String CHROME_PROFILE_DIR_KEY = "chrome_profile_dir";
     private static final String LOCAL_BROWSER_PORT_KEY = "local_browser_port";
     private static final String LOCAL_CONFIG_FILE = "config.local.properties";
+    private static final String CONFIG_RESOURCE = "config.properties";
+    private static final String SITE_KEY = "site";
     private static final Properties PROPERTIES = new Properties();
 
     // Deliberate dwell after opening a page, before the captcha check (bot protection; also lets
@@ -40,38 +46,60 @@ public class App {
     // Matches GamePage's enter-button wait, which plays the same role when the button is missing.
     private static final int REJECTED_GIVEAWAY_PAUSE_SECS = 5;
 
-    static {
-        readProperties();
-    }
-
+    /**
+     * Loads config: bundled config.properties, then the optional git-ignored local overrides,
+     * then env vars. Fails fast with a clear message instead of running with an empty config.
+     */
     private static void readProperties() {
-        try {
-            PROPERTIES.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("config.properties"));
-            // Optional git-ignored overrides (secrets live here, not in the committed file)
-            Path localConfig = Path.of(LOCAL_CONFIG_FILE);
-            if (Files.isRegularFile(localConfig)) {
-                try (Reader reader = Files.newBufferedReader(localConfig)) {
-                    PROPERTIES.load(reader);
-                }
-                log.info("Loaded local overrides from {}", localConfig.toAbsolutePath());
+        try (InputStream in = App.class.getClassLoader().getResourceAsStream(CONFIG_RESOURCE)) {
+            if (in == null) {
+                throw new IllegalStateException(CONFIG_RESOURCE + " not found on the classpath");
             }
-            Optional.ofNullable(System.getenv(COOKIE_PROP_KEY)).ifPresent(value -> PROPERTIES.setProperty(COOKIE_PROP_KEY, value));
-            Optional.ofNullable(System.getenv(CF_CLEARANCE_FIELD_NAME)).ifPresent(value -> PROPERTIES.setProperty(CF_CLEARANCE_FIELD_NAME, value));
-
-            Optional.ofNullable(System.getenv("CI")).ifPresent(value -> PROPERTIES.setProperty("ci", value));
-            Optional.ofNullable(System.getenv("CHROME_PROFILE_DIR")).ifPresent(value -> PROPERTIES.setProperty(CHROME_PROFILE_DIR_KEY, value));
-            Optional.ofNullable(System.getenv("LOCAL_BROWSER_PORT")).ifPresent(value -> PROPERTIES.setProperty(LOCAL_BROWSER_PORT_KEY, value));
+            PROPERTIES.load(new InputStreamReader(in, StandardCharsets.UTF_8));
         } catch (IOException e) {
-            log.warn("Properties not loaded:", e);
+            throw new UncheckedIOException("Can't read " + CONFIG_RESOURCE, e);
         }
+
+        // Optional git-ignored overrides (secrets live here, not in the committed file)
+        Path localConfig = Path.of(LOCAL_CONFIG_FILE);
+        if (Files.isRegularFile(localConfig)) {
+            try (Reader reader = Files.newBufferedReader(localConfig)) {
+                PROPERTIES.load(reader);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Can't read " + localConfig.toAbsolutePath(), e);
+            }
+            log.info("Loaded local overrides from {}", localConfig.toAbsolutePath());
+        }
+
+        overrideFromEnv(COOKIE_PROP_KEY, COOKIE_PROP_KEY);
+        overrideFromEnv(CF_CLEARANCE_FIELD_NAME, CF_CLEARANCE_FIELD_NAME);
+        overrideFromEnv("CI", "ci");
+        overrideFromEnv("CHROME_PROFILE_DIR", CHROME_PROFILE_DIR_KEY);
+        overrideFromEnv("LOCAL_BROWSER_PORT", LOCAL_BROWSER_PORT_KEY);
     }
 
-    private static final List<String> pages = Arrays.asList(
-            PROPERTIES.getProperty("site") + "giveaways/search?type=wishlist",
-            PROPERTIES.getProperty("site") + "giveaways/search?type=recommended",
-            PROPERTIES.getProperty("site") + "giveaways/search?dlc=true",
-            PROPERTIES.getProperty("site")
-    );
+    /** An env var that is set (even to an empty string, which clears the value) wins over config files. */
+    private static void overrideFromEnv(String envName, String key) {
+        Optional.ofNullable(System.getenv(envName)).ifPresent(value -> PROPERTIES.setProperty(key, value));
+    }
+
+    /** Site root from config, always with a trailing slash. */
+    private static String siteUrl() {
+        String site = PROPERTIES.getProperty(SITE_KEY, "").trim();
+        if (site.isEmpty()) {
+            throw new IllegalStateException("'" + SITE_KEY + "' is not set in " + CONFIG_RESOURCE + " / " + LOCAL_CONFIG_FILE);
+        }
+        return site.endsWith("/") ? site : site + "/";
+    }
+
+    private static List<String> categoryPages(String site) {
+        return List.of(
+                site + "giveaways/search?type=wishlist",
+                site + "giveaways/search?type=recommended",
+                site + "giveaways/search?dlc=true",
+                site
+        );
+    }
 
     private static boolean isLocalMode() {
         String profileDir = PROPERTIES.getProperty(CHROME_PROFILE_DIR_KEY, "").trim();
@@ -106,6 +134,14 @@ public class App {
     }
 
     public static void main(String[] args) {
+        readProperties();
+        String site = siteUrl();
+        // CI mode injects the session cookie; check it before spending time on starting a browser
+        if (!isLocalMode() && PROPERTIES.getProperty(COOKIE_PROP_KEY, "").isBlank()) {
+            throw new IllegalStateException("No cookie has been read from props! Set env var '"
+                    + COOKIE_PROP_KEY + "' or put it into " + LOCAL_CONFIG_FILE);
+        }
+
         Configuration.browser = "chrome";
         Configuration.browserSize = "1366x768";
         Configuration.screenshots = false;
@@ -120,12 +156,17 @@ public class App {
             // Option A: launch Chrome with the user's real profile — captcha likely skipped entirely
             log.info("Local mode: launching Chrome with real profile at '{}'", profileDir);
             Configuration.browserCapabilities = Utils.buildProfileOptions(profileDir);
-            Selenide.open(PROPERTIES.getProperty("site"));
+            Selenide.open(site);
             Utils.injectStealthScript((ChromiumDriver) WebDriverRunner.getWebDriver());
         } else if (!localPort.isEmpty()) {
             // Option B: attach to an already-running Chrome instance
             String debuggerAddress = "localhost:" + localPort;
-            int port = Integer.parseInt(localPort);
+            int port;
+            try {
+                port = Integer.parseInt(localPort);
+            } catch (NumberFormatException e) {
+                throw new IllegalStateException("'" + LOCAL_BROWSER_PORT_KEY + "' must be a port number, got '" + localPort + "'");
+            }
 
             // Wait until Chrome is listening on the debug port
             while (!isPortOpen("localhost", port)) {
@@ -139,7 +180,7 @@ public class App {
 
             log.info("Local mode: attaching to running Chrome at {}", debuggerAddress);
             Configuration.browserCapabilities = Utils.buildAttachOptions(debuggerAddress);
-            Selenide.open(PROPERTIES.getProperty("site"));
+            Selenide.open(site);
 
             // Wait until user is logged in
             while (!new BaseForm().isLoggedIn()) {
@@ -154,15 +195,11 @@ public class App {
         } else {
             // Default (CI) mode: spawn a fresh Chrome with stealth options
             Configuration.browserCapabilities = Utils.buildStealthOptions();
-            Selenide.open(PROPERTIES.getProperty("site"));
+            Selenide.open(site);
             Utils.injectStealthScript((ChromiumDriver) WebDriverRunner.getWebDriver());
         }
 
         if (!isLocalMode()) {
-            if (PROPERTIES.getProperty(COOKIE_PROP_KEY, "").isBlank()) {
-                throw new RuntimeException("No cookie has been read from props! Set env var '"
-                        + COOKIE_PROP_KEY + "' or put it into " + LOCAL_CONFIG_FILE);
-            }
             WebDriverRunner.getWebDriver().manage().deleteCookieNamed(COOKIE_FIELD_NAME);
             WebDriverRunner.getWebDriver().manage().addCookie(new Cookie(COOKIE_FIELD_NAME, PROPERTIES.getProperty(COOKIE_PROP_KEY)));
 
@@ -184,7 +221,7 @@ public class App {
         }
 
         int pointsLeft = Integer.MAX_VALUE; // unknown until the first page is read
-        for (String page : pages) {
+        for (String page : categoryPages(site)) {
             if (pointsLeft < MIN_GIVEAWAY_COST) {
                 log.info("Out of points ({}), skipping remaining pages.", pointsLeft);
                 break;
