@@ -11,7 +11,10 @@ import static com.codeborne.selenide.Selenide.$;
 
 public class GamePage extends BaseForm {
 
-    /** The "Enter Giveaway" button may render with a delay. */
+    /**
+     * The "Enter Giveaway" button may render with a delay. When it's missing, this wait also
+     * acts as a deliberate dwell on the page (bot protection), so don't shorten it.
+     */
     private static final Duration ENTER_BUTTON_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration ENTRY_CONFIRM_TIMEOUT = Duration.ofSeconds(20);
 

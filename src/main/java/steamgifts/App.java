@@ -31,6 +31,9 @@ public class App {
     private static final Random RANDOM = new Random();
     // Cheapest possible giveaway; with fewer points there is nothing left to enter
     private static final int MIN_GIVEAWAY_COST = 1;
+    // Extra dwell on a rejected giveaway page so we don't bounce off it instantly (bot protection).
+    // Matches GamePage's enter-button wait, which plays the same role when the button is missing.
+    private static final int REJECTED_GIVEAWAY_PAUSE_SECS = 5;
 
     static {
         readProperties();
@@ -289,6 +292,7 @@ public class App {
             GamePage gamePage = new GamePage();
             if (gamePage.isError()) {
                 log.info("Can't participate ({}): {}", gamePage.getErrorText(), giveaway.name());
+                Utils.pause(REJECTED_GIVEAWAY_PAUSE_SECS);
             } else if (!gamePage.canEnter()) {
                 String reason = gamePage.isEntered() ? "already entered" : "enter button is not present";
                 log.info("Can't participate ({}): {}", reason, giveaway.name());
