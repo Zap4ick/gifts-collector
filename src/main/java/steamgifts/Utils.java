@@ -15,11 +15,17 @@ import java.util.concurrent.TimeUnit;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Utils {
 
+    /**
+     * Sleeps for the given time. Interruption means "stop", so it aborts the run instead of
+     * continuing: with the interrupt flag set every later pause would return instantly and the
+     * bot would hammer the site without its deliberate delays.
+     */
     public static void pause(int secs) {
         try {
             TimeUnit.SECONDS.sleep(secs);
         } catch (InterruptedException e) {
-            log.warn("Exception in thread sleeping: ", e);
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while pausing, stopping the run", e);
         }
     }
 
