@@ -88,7 +88,8 @@ public class Collector {
                 break;
             }
 
-            List<Giveaway> candidates = listPage.getGiveaways().stream()
+            List<Giveaway> giveaways = listPage.getGiveaways();
+            List<Giveaway> candidates = giveaways.stream()
                     .filter(g -> !g.pinned() && !visited.contains(g.url()))
                     .toList();
             if (candidates.isEmpty()) {
@@ -102,7 +103,7 @@ public class Collector {
                 log.info("Points ({}) below minimum giveaway cost ({}) — stopping early.", points, minimumCostSeen);
                 break;
             }
-            enterAffordableGiveaways(listPage, visited);
+            enterAffordableGiveaways(listPage, points, giveaways, visited);
         } while (listPage.clickNextIfPresent());
         // Read points again: the value from the loop is stale after giveaways have been entered
         int pointsLeft = listPage.getPoints();
@@ -110,9 +111,10 @@ public class Collector {
         return pointsLeft;
     }
 
-    private void enterAffordableGiveaways(ListPage listPage, Set<String> visited) {
+    /** Starts from the already read list page state, re-reads it after every giveaway. */
+    private void enterAffordableGiveaways(ListPage listPage, int points, List<Giveaway> giveaways, Set<String> visited) {
         String listUrl = WebDriverRunner.url();
-        Optional<Giveaway> next = findAffordable(listPage, visited);
+        Optional<Giveaway> next = findAffordable(points, giveaways, visited);
         while (next.isPresent()) {
             Giveaway giveaway = next.get();
             visited.add(giveaway.url()); // never open the same giveaway twice, whatever happens on its page
@@ -129,7 +131,7 @@ public class Collector {
             Selenide.open(listUrl);
             listPage.dismissOverlays();
             Utils.pause(4 + RANDOM.nextInt(6)); // random 4–9s to avoid uniform timing fingerprint
-            next = findAffordable(listPage, visited);
+            next = findAffordable(listPage.getPoints(), listPage.getGiveaways(), visited);
         }
     }
 
@@ -154,9 +156,8 @@ public class Collector {
         return String.valueOf(e.getMessage()).lines().findFirst().orElse("");
     }
 
-    private static Optional<Giveaway> findAffordable(ListPage listPage, Set<String> visited) {
-        int points = listPage.getPoints();
-        return listPage.getGiveaways().stream()
+    private static Optional<Giveaway> findAffordable(int points, List<Giveaway> giveaways, Set<String> visited) {
+        return giveaways.stream()
                 .filter(g -> !g.pinned() && !visited.contains(g.url()) && g.cost() <= points)
                 .findFirst();
     }
