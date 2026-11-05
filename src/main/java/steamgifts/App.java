@@ -29,7 +29,10 @@ public class App {
     private static final String LOCAL_CONFIG_FILE = "config.local.properties";
     private static final Properties PROPERTIES = new Properties();
 
-    private static final String CAPTCHA_PASSED_KEY = "CAPTCHA_PASSED";
+    // Deliberate dwell after opening a page, before the captcha check (bot protection; also lets
+    // the challenge render). Only applies until a captcha has been passed once. Don't shorten.
+    private static final int CAPTCHA_CHECK_PAUSE_SECS = 10;
+    private static boolean captchaPassed = false;
     private static final Random RANDOM = new Random();
     // Cheapest possible giveaway; with fewer points there is nothing left to enter
     private static final int MIN_GIVEAWAY_COST = 1;
@@ -218,7 +221,8 @@ public class App {
     private static int drillPage(String page) {
         Selenide.open(page);
 
-        if (System.getProperty(CAPTCHA_PASSED_KEY) == null) {
+        if (!captchaPassed) {
+            Utils.pause(CAPTCHA_CHECK_PAUSE_SECS);
             CaptchaPage captchaPage = new CaptchaPage();
             if (captchaPage.isOpen()) {
                 if (isLocalMode()) {
@@ -226,7 +230,7 @@ public class App {
                 } else {
                     captchaPage.passCaptcha();
                 }
-                System.setProperty(CAPTCHA_PASSED_KEY, "true");
+                captchaPassed = true;
             }
         }
 

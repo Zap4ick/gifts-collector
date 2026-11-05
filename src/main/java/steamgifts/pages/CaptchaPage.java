@@ -20,8 +20,8 @@ public class CaptchaPage extends BaseForm {
 
     private final SelenideElement seCaptcha = $x("//div[@id][@style='display: grid;']");
 
+    /** Plain check, no waiting: the caller pauses before it (see App.CAPTCHA_CHECK_PAUSE_SECS). */
     public boolean isOpen() {
-        Utils.pause(10);
         return seCaptcha.is(exist);
     }
 
