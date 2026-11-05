@@ -4,52 +4,47 @@ import com.codeborne.selenide.ClickOptions;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.SelenideElement;
 import com.codeborne.selenide.ex.UIAssertionError;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 
 import static com.codeborne.selenide.Selenide.$;
-import static com.codeborne.selenide.Selenide.$x;
 
-@Slf4j
 public class GamePage extends BaseForm {
 
+    /** The "Enter Giveaway" button may render with a delay. */
+    private static final Duration ENTER_BUTTON_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration ENTRY_CONFIRM_TIMEOUT = Duration.ofSeconds(20);
+
     private final SelenideElement seError = $(".sidebar__error");
-    private final SelenideElement seWon = $x("//div[contains(@class,'sidebar__error')][contains(text(),'Won')]");
-    private final SelenideElement seNotEnoughPoint = $(".fa-exclamation-circle");
     private final SelenideElement seEnter = $(".sidebar__entry-insert");
     private final SelenideElement seRemoveEntry = $(".sidebar__entry-delete");
-    private final SelenideElement seGameName = $(".featured__heading__medium");
 
     public void enterGiveaway() {
-        log.info("Entering giveaway for {}", seGameName.getText());
         seEnter.click(ClickOptions.usingJavaScript());
-        seRemoveEntry.should(Condition.appear, Duration.of(20, ChronoUnit.SECONDS)); //todo: take from params
+        seRemoveEntry.should(Condition.appear, ENTRY_CONFIRM_TIMEOUT);
     }
 
+    /** Sidebar shows why the giveaway can't be entered (not enough points, won, exists in account, ...). */
     public boolean isError() {
         return seError.isDisplayed();
     }
 
-    public boolean isWon() {
-       return seWon.isDisplayed();
+    public String getErrorText() {
+        return seError.text().strip();
     }
 
-    public boolean isNotEnoughPoint() {
-        return seNotEnoughPoint.isDisplayed();
-    }
-
-    public boolean isEntered() {
+    /** Waits briefly for the "Enter Giveaway" button. */
+    public boolean canEnter() {
         try {
-            seEnter.should(Condition.appear, Duration.of(5, ChronoUnit.SECONDS));
-        } catch (UIAssertionError e) {
+            seEnter.should(Condition.appear, ENTER_BUTTON_TIMEOUT);
             return true;
+        } catch (UIAssertionError e) {
+            return false;
         }
-        return !seEnter.isDisplayed();
     }
 
-    public String getName() {
-        return seGameName.text();
+    /** "Remove Entry" button is shown, i.e. we've already entered this giveaway. */
+    public boolean isEntered() {
+        return seRemoveEntry.isDisplayed();
     }
 }

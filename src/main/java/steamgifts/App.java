@@ -288,12 +288,12 @@ public class App {
 
             GamePage gamePage = new GamePage();
             if (gamePage.isError()) {
-                log.info("Error encountered on game page: {}", gamePage.getName());
-                String reason = gamePage.isWon() ? "already won" : gamePage.isEntered() ? "already entered" : "not enough points";
-                log.info("Can't participate ({}): {}", reason, gamePage.getName());
-            } else if (gamePage.isEntered()) { // no error but no button either
-                log.info("Can't participate ({}): {}", gamePage.getName(), "button is not present");
+                log.info("Can't participate ({}): {}", gamePage.getErrorText(), giveaway.name());
+            } else if (!gamePage.canEnter()) {
+                String reason = gamePage.isEntered() ? "already entered" : "enter button is not present";
+                log.info("Can't participate ({}): {}", reason, giveaway.name());
             } else {
+                log.info("Entering giveaway for {} ({}P)", giveaway.name(), giveaway.cost());
                 gamePage.enterGiveaway();
             }
 
