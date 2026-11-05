@@ -181,15 +181,7 @@ public class App {
             Configuration.browserCapabilities = Utils.buildAttachOptions(debuggerAddress);
             Selenide.open(site);
 
-            // Wait until user is logged in
-            while (!new BaseForm().isLoggedIn()) {
-                waitForInput("""
-                        
-                        Not logged in to steamgifts.com.
-                        Please log in to https://www.steamgifts.com in the Chrome window.
-                        """);
-                Selenide.refresh();
-            }
+            ensureLoggedIn();
             log.info("Logged in — starting giveaway collection.");
         } else {
             // Default (CI) mode: spawn a fresh Chrome with stealth options
@@ -241,6 +233,27 @@ public class App {
         }
     }
 
+    /**
+     * Local modes: asks the user to log in in the browser window until they are.
+     * CI mode: nobody to ask, so a missing login means a bad cookie.
+     */
+    private static void ensureLoggedIn() {
+        if (!isLocalMode()) {
+            if (!new BaseForm().isLoggedIn()) {
+                throw new RuntimeException("We are not logged in! Check cookie in props!");
+            }
+            return;
+        }
+        while (!new BaseForm().isLoggedIn()) {
+            waitForInput("""
+                    
+                    Not logged in to steamgifts.com.
+                    Please log in to https://www.steamgifts.com in the Chrome window.
+                    """);
+            Selenide.refresh();
+        }
+    }
+
     /** Enters what it can on one giveaway category and returns the points left afterwards. */
     private static int drillPage(String page) {
         Selenide.open(page);
@@ -262,18 +275,7 @@ public class App {
             throw new RuntimeException("Seems like we are suspened :( Aborting mission!");
         }
 
-        if (isLocalMode()) {
-            while (!new BaseForm().isLoggedIn()) {
-                waitForInput("""
-                        
-                        Not logged in to steamgifts.com.
-                        Please log in to https://www.steamgifts.com in the Chrome window.
-                        """);
-                Selenide.refresh();
-            }
-        } else if (!new BaseForm().isLoggedIn()) {
-            throw new RuntimeException("We are not logged in! Check cookie in props!");
-        }
+        ensureLoggedIn();
 
         ListPage listPage = new ListPage();
         listPage.dismissOverlays();
