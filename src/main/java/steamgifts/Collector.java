@@ -14,6 +14,7 @@ import steamgifts.pages.SuspensionPage;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 
 /** Walks the giveaway categories and enters every affordable giveaway. */
@@ -87,19 +88,22 @@ public class Collector {
             }
 
             List<Giveaway> giveaways = listPage.getGiveaways();
-            List<Giveaway> candidates = giveaways.stream()
-                    .filter(g -> !g.pinned() && !visited.contains(g.url()))
-                    .toList();
-            if (candidates.isEmpty()) {
+            if (giveaways.isEmpty()) {
                 log.info("No more giveaways on this page, skipping.");
                 break;
             }
 
-            int pageMinCost = candidates.stream().mapToInt(Giveaway::cost).min().orElse(Integer.MAX_VALUE);
-            minimumCostSeen = Math.min(minimumCostSeen, pageMinCost);
-            if (points < minimumCostSeen) {
-                log.info("Points ({}) below minimum giveaway cost ({}) — stopping early.", points, minimumCostSeen);
-                break;
+            // A page with only pinned/visited giveaways left has no cost to compare: go on to the next page
+            OptionalInt pageMinCost = giveaways.stream()
+                    .filter(g -> !g.pinned() && !visited.contains(g.url()))
+                    .mapToInt(Giveaway::cost)
+                    .min();
+            if (pageMinCost.isPresent()) {
+                minimumCostSeen = Math.min(minimumCostSeen, pageMinCost.getAsInt());
+                if (points < minimumCostSeen) {
+                    log.info("Points ({}) below minimum giveaway cost ({}) — stopping early.", points, minimumCostSeen);
+                    break;
+                }
             }
             enterAffordableGiveaways(listPage, points, giveaways, visited);
         } while (listPage.clickNextIfPresent());
